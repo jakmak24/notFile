@@ -24,6 +24,7 @@ public class Main {
 
         Scanner scan = new Scanner(System.in);
         while (true) {
+
             String s = scan.nextLine();
             if (s.equals("quit")) break;
             if (s.startsWith("search ")){

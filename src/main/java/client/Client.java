@@ -9,7 +9,7 @@ public class Client {
 
     private final String userID;
     private final String groupID;
-    private static final String serverSearch = "serverSearch";
+    private static final String serverGet = "serverGet";
     private Connection connection;
     private Channel sendChannel;
 
@@ -85,21 +85,21 @@ public class Client {
     }
 
     public void searchTorrents(String query){
-        AMQP.BasicProperties props = new AMQP.BasicProperties.Builder().replyTo(userID).build();
-        try {
-            sendChannel.basicPublish("server", serverSearch, props, query.getBytes());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        System.out.println(" [x] Sent '" + query + "'");
+        //TODO send torrent file to server search for torrent
     }
 
     public void addTorrent(String torrent){
-
+        //TODO send torrent file to server
     }
 
     public void getTorrent(String torrentID){
-
+        AMQP.BasicProperties props = new AMQP.BasicProperties.Builder().replyTo(userID).build();
+        try {
+            sendChannel.basicPublish("server", serverGet, props, torrentID.getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        System.out.println(" [x] Sent '" + torrentID + "'");
     }
 
     public void closeConnection()  {

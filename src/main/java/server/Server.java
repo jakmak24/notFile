@@ -7,7 +7,7 @@ import java.util.concurrent.TimeoutException;
 
 public class Server {
 
-    private final static String serverSearch = "serverSearch";
+    private final static String serverGet = "serverGet";
 
 
     public static void main(String[] args) throws IOException, TimeoutException {
@@ -19,8 +19,8 @@ public class Server {
         Channel channelResponse = connection.createChannel();
 
         channel.exchangeDeclare("server",BuiltinExchangeType.DIRECT);
-        String searchQueue = channel.queueDeclare(serverSearch, false, false, false, null).getQueue();
-        channel.queueBind(searchQueue,"server",serverSearch);
+        String searchQueue = channel.queueDeclare(serverGet, false, false, false, null).getQueue();
+        channel.queueBind(searchQueue,"server",serverGet);
         System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
 
         Consumer consumer = new DefaultConsumer(channel) {
@@ -35,7 +35,7 @@ public class Server {
             }
         };
 
-        channel.basicConsume(serverSearch, true, consumer);
+        channel.basicConsume(serverGet, true, consumer);
 
     }
 
