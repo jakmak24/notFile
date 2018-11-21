@@ -5,39 +5,46 @@ import java.util.Map;
 
 public class WebtorrentWraper {
 
+    private String webtorrentPath;
 
-    public String createTorrent(String torrentName,String pathToFile,String outPath,String announce){
+    public WebtorrentWraper(){
 
-        String npmPath=".";
-        String[] paths = System.getenv("PATH").split(";");
-        for(String path :paths){
-            if (path.contains("npm")){
-                npmPath = path;
-                break;
+        if(System.getProperty("os.name").contains("Linux")){
+            webtorrentPath = "/usr/local/bin/webtorrent";
+        }else if (System.getProperty("os.name").contains("Windows")){
+            String[] paths = System.getenv("PATH").split(";");
+            for(String path :paths){
+                if (path.endsWith("npm")){
+                    webtorrentPath = path+"/webtorrent.cmd";
+                    break;
+                }
             }
         }
 
+    }
+
+    public String createTorrent(String torrentName,String pathToFile,String outPath,String announce){
+
+
         try {
             Process exec = Runtime.getRuntime().exec(
-                    npmPath+"/webtorrent.cmd "+
-                    "create "+pathToFile+" "+
-                    "--announce "+announce+" "+
-                    "--out "+outPath+"/"+torrentName+".torrent",
-                    new String[]{System.getenv("PATH")}
-            );
+                    webtorrentPath +
+                    " create "+pathToFile+
+                    " --announce "+announce+
+                    " --out "+outPath+"/"+torrentName+".torrent");
             exec.waitFor();
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
 
-        return "OK";
+        return outPath+"/"+torrentName+".torrent";
     }
 
 
     public static void main(String[] args) {
 
-        new WebtorrentWraper().createTorrent("elo","D:\\Test\\A\\down\\todo.txt","D:\\Test\\A",
-                "http://localhost:8080/announce");
+        new WebtorrentWraper().createTorrent("elo","./down/todo.txt",Config.TORRENT_FOLDER,
+                Config.TRACKER_ANNOUNCE);
 
 
     }

@@ -12,16 +12,18 @@ public class Client {
     private static final String serverGet = "serverGet";
     private Connection connection;
     private Channel sendChannel;
+    private WebtorrentWraper webtorrentWraper;
 
 
     public Client(String userID, String groupID){
         this.userID = userID;
         this.groupID = groupID;
+        this.webtorrentWraper = new WebtorrentWraper();
     }
 
     public void openConnection()  {
         ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost("localhost");
+        factory.setHost(Config.RABBIT_MQ_HOST);
 
         try {
             connection = factory.newConnection();
