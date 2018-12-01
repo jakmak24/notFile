@@ -1,11 +1,9 @@
 package server;
 
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.*;
-import data.TorrentRecordMessage;
-import data.GetTorrentMessage;
-import data.MetaData;
-import data.SearchTorrentMessage;
+import data.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -13,11 +11,16 @@ import java.util.concurrent.TimeoutException;
 
 public class Server {
 
-    private final static String serverSearch = "serverSearch";
-    private final static String serverGet = "serverGet";
-    private final static String serverAdd = "serverAdd";
     private Connection connection;
+    private Channel channelResponse;
     private Database database;
+
+    public Channel getChannelResponse() {
+        return channelResponse;
+    }
+    public Database getDatabase() {
+        return database;
+    }
 
     public void openConnection(){
         ConnectionFactory factory = new ConnectionFactory();
@@ -25,62 +28,29 @@ public class Server {
         try {
             connection = factory.newConnection();
             Channel channel = connection.createChannel();
-            Channel channelResponse = connection.createChannel();
+            channelResponse = connection.createChannel();
 
-            channel.exchangeDeclare("server",BuiltinExchangeType.DIRECT);
-            String searchQueue = channel.queueDeclare(serverSearch, false, false, false, null).getQueue();
-            channel.queueBind(searchQueue,"server",serverSearch);
+            channel.exchangeDeclare(MessageConfig.SERVER_EXCHANGE,BuiltinExchangeType.DIRECT);
+            String searchQueue = channel.queueDeclare(MessageConfig.serverSearch, false, false, false, null).getQueue();
+            channel.queueBind(searchQueue,MessageConfig.SERVER_EXCHANGE,MessageConfig.serverSearch);
 
-            String getQueue = channel.queueDeclare(serverGet, false, false, false, null).getQueue();
-            channel.queueBind(getQueue,"server",serverGet);
+            String getQueue = channel.queueDeclare(MessageConfig.serverGet, false, false, false, null).getQueue();
+            channel.queueBind(getQueue,MessageConfig.SERVER_EXCHANGE,MessageConfig.serverGet);
 
-            String addQueue = channel.queueDeclare(serverAdd, false, false, false, null).getQueue();
-            channel.queueBind(addQueue,"server",serverAdd);
+            String addQueue = channel.queueDeclare(MessageConfig.serverAdd, false, false, false, null).getQueue();
+            channel.queueBind(addQueue,MessageConfig.SERVER_EXCHANGE,MessageConfig.serverAdd);
 
             database = new Database();
 
-            System.out.println(" [*] Waiting for data. To exit press CTRL+C");
+            System.out.println(" [SERVER] Waiting for data. To exit press CTRL+C");
 
-            Consumer searchConsumer = new DefaultConsumer(channel) {
-                @Override
-                public void handleDelivery(String consumerTag, Envelope envelope,
-                                           AMQP.BasicProperties properties, byte[] body)
-                        throws IOException {
-                    String message = new String(body, "UTF-8");
-                    System.out.println(" [Search] Received '" + message + "'");
-                    ArrayList<MetaData> queryResult = database.getAllTorrents();
-                    String json = new ObjectMapper().writeValueAsString(new SearchTorrentMessage(queryResult));
-                    channelResponse.basicPublish("user",properties.getReplyTo(),null,json.getBytes());
-                }
-            };
-
-            Consumer addConsumer = new DefaultConsumer(channel) {
-                @Override
-                public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
-                    String message = new String(body, "UTF-8");
-                    ObjectMapper objectMapper = new ObjectMapper();
-                    TorrentRecordMessage torrentRecordMessage = objectMapper.readValue(body, TorrentRecordMessage.class);
-                    System.out.println(" [Add] Received '" + torrentRecordMessage.getMetaData().getName() + "'");
-                    database.addTorrent(torrentRecordMessage);
-                    channelResponse.basicPublish("user",properties.getReplyTo(),null,("Add "+ torrentRecordMessage.getMetaData().getName()+" success").getBytes());
-                }
-            };
-
-            Consumer getConsumer = new DefaultConsumer(channel) {
-                @Override
-                public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
-                    String message = new String(body, "UTF-8");
-                    ObjectMapper objectMapper = new ObjectMapper();
-                    GetTorrentMessage getTorrentMessage = objectMapper.readValue(body, GetTorrentMessage.class);
-                    TorrentRecordMessage requestedTorrent = database.getTorrent(getTorrentMessage.getId());
-                    String json = objectMapper.writeValueAsString(requestedTorrent);
-                    channelResponse.basicPublish("user",properties.getReplyTo(),null,json.getBytes());
-                }
-            };
+            Consumer searchConsumer = new SearchMessageConsumer(channel,this);
+            Consumer addConsumer = new AddMessageConsumer(channel,this);
+            Consumer getConsumer = new GetMessageConsumer(channel,this);
 
             new Thread(()->{
                 try {
-                    channel.basicConsume(serverSearch, true, searchConsumer);
+                    channel.basicConsume(MessageConfig.serverSearch, true, searchConsumer);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -88,7 +58,7 @@ public class Server {
 
             new Thread(()->{
                 try {
-                    channel.basicConsume(serverGet, true, getConsumer);
+                    channel.basicConsume(MessageConfig.serverGet, true, getConsumer);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -96,7 +66,7 @@ public class Server {
 
             new Thread(()->{
                 try {
-                    channel.basicConsume(serverAdd, true, addConsumer);
+                    channel.basicConsume(MessageConfig.serverAdd, true, addConsumer);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -115,10 +85,10 @@ public class Server {
     }
 
     public void listDatabase(){
-        System.out.format("|%12s|%15s|%7s|%7s|%13s|", "NAME", "FILE SIZE", "X","Y","OWNER");
+        System.out.format("|%12s|%15s|%7s|%7s|%13s|\n", "NAME", "FILE SIZE", "X","Y","OWNER");
 
         for(MetaData md: database.getAllTorrents()){
-            System.out.format("|%12s|%15d|%7d|%7d|%13s|", md.getName(), md.getFileLength(), md.getX(),md.getY(),md.getOwnerID());
+            System.out.format("|%12s|%15d|%7d|%7d|%13s|\n", md.getName(), md.getFileLength(), md.getX(),md.getY(),md.getOwnerID());
         }
 
     }

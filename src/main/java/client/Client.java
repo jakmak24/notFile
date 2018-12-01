@@ -2,6 +2,7 @@ package client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.*;
+import data.MessageConfig;
 import data.TorrentRecordMessage;
 import data.GetTorrentMessage;
 import data.MetaData;
@@ -13,20 +14,20 @@ import java.util.concurrent.TimeoutException;
 
 public class Client {
 
-    private final String userID;
-    private final String groupID;
-    private static final String serverGet = "serverGet";
-    private static final String serverAdd = "serverAdd";
-    private final static String serverSearch = "serverSearch";
     private Connection connection;
     private Channel sendChannel;
-    private WebtorrentWraper webtorrentWraper;
+    private WebtorrentWraper webtorrentWraper= new WebtorrentWraper();
+    private User user;
 
+    public Client(User user){
+        this.user = user;
+    }
 
-    public Client(String userID, String groupID){
-        this.userID = userID;
-        this.groupID = groupID;
-        this.webtorrentWraper = new WebtorrentWraper();
+    public User getUser() {
+        return user;
+    }
+    public Channel getSendChannel() {
+        return sendChannel;
     }
 
     public void openConnection()  {
@@ -40,32 +41,15 @@ public class Client {
             sendChannel = connection.createChannel();
 
             String userQueue = userChannel.queueDeclare().getQueue();
-            userChannel.exchangeDeclare("user", BuiltinExchangeType.DIRECT);
-            userChannel.queueBind(userQueue, "user", userID);
+            userChannel.exchangeDeclare(MessageConfig.USER_EXCHANGE, BuiltinExchangeType.DIRECT);
+            userChannel.queueBind(userQueue, MessageConfig.USER_EXCHANGE, user.getUserID());
 
             String groupQueue = groupChannel.queueDeclare().getQueue();
-            groupChannel.exchangeDeclare("group", BuiltinExchangeType.TOPIC);
-            groupChannel.queueBind(groupQueue, "group", groupID);
+            groupChannel.exchangeDeclare(MessageConfig.GROUP_EXCHANGE, BuiltinExchangeType.DIRECT);
+            groupChannel.queueBind(groupQueue, MessageConfig.GROUP_EXCHANGE, user.getGroupID());
 
-
-            Consumer userConsumer = new DefaultConsumer(userChannel) {
-                @Override
-                public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
-                    String message = new String(body, "UTF-8");
-                    System.out.println(" [USER] Received '" + message + "'");
-
-                }
-            };
-
-            Consumer groupConsumer = new DefaultConsumer(groupChannel) {
-                @Override
-                public void handleDelivery(String consumerTag, Envelope envelope,
-                                           AMQP.BasicProperties properties, byte[] body)
-                        throws IOException {
-                    String message = new String(body, "UTF-8");
-                    System.out.println(" [Group] Received '" + message + "'");
-                }
-            };
+            Consumer userConsumer = new UserMessageConsumer(userChannel,this);
+            Consumer groupConsumer = new GroupMessageConsumer(userChannel,this);
 
             new Thread(()->{
                 try {
@@ -89,9 +73,12 @@ public class Client {
 
 
     public void searchTorrents(String query){
-        AMQP.BasicProperties props = new AMQP.BasicProperties.Builder().replyTo(userID).build();
+        AMQP.BasicProperties props = new AMQP.BasicProperties.Builder()
+                .replyTo(user.getUserID())
+                .contentType(MessageConfig.ACTION_SEARCH)
+                .build();
         try {
-            sendChannel.basicPublish("server", serverSearch, props, query.getBytes());
+            sendChannel.basicPublish(MessageConfig.SERVER_EXCHANGE, MessageConfig.serverSearch, props, query.getBytes());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -106,12 +93,16 @@ public class Client {
         File f = new File(torrent);
         long size = f.length();
 
-        AMQP.BasicProperties props = new AMQP.BasicProperties.Builder().replyTo(userID).build();
+        AMQP.BasicProperties props = new AMQP.BasicProperties.Builder()
+                .replyTo(user.getUserID())
+                .contentType(MessageConfig.ACTION_ADD)
+                .build();
         try {
             byte[] fileData = Files.readAllBytes(f.toPath());
-            TorrentRecordMessage torrentRecordMessage = new TorrentRecordMessage(new MetaData(f.getName(),userID,0,0,size),fileData);
+            MetaData metaData = new MetaData(f.getName(),user.getUserID(),0,0,size);
+            TorrentRecordMessage torrentRecordMessage = new TorrentRecordMessage(metaData,fileData);
             String json = new ObjectMapper().writeValueAsString(torrentRecordMessage);
-            sendChannel.basicPublish("server", serverAdd, props, json.getBytes());
+            sendChannel.basicPublish(MessageConfig.SERVER_EXCHANGE, MessageConfig.serverAdd, props, json.getBytes());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -119,14 +110,36 @@ public class Client {
     }
 
     public void getTorrent(String torrentID){
-        AMQP.BasicProperties props = new AMQP.BasicProperties.Builder().replyTo(userID).build();
+        AMQP.BasicProperties props = new AMQP.BasicProperties.Builder()
+                .replyTo(user.getUserID())
+                .contentType(MessageConfig.ACTION_GET)
+                .build();
         try {
             GetTorrentMessage getTorrentMessage = new GetTorrentMessage(Integer.parseInt(torrentID));
             String json = new ObjectMapper().writeValueAsString(getTorrentMessage);
-            sendChannel.basicPublish("server", serverGet, props, json.getBytes());
+            sendChannel.basicPublish(MessageConfig.SERVER_EXCHANGE, MessageConfig.serverGet, props, json.getBytes());
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void downloadTorrent(String torrentPath){
+        new Thread(()->{
+            webtorrentWraper.downloadTorrent(torrentPath,Config.DOWNLOAD_FOLDER);
+            AMQP.BasicProperties props = new AMQP.BasicProperties.Builder()
+                    .replyTo(user.getUserID())
+                    .contentType(MessageConfig.ACTION_TORRENT_DOWNLOADED)
+                    .build();
+            try {
+                sendChannel.basicPublish(MessageConfig.GROUP_EXCHANGE,user.getGroupID(),props,("Downloaded"+torrentPath).getBytes());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+    public void seedTorrent(String torrentPath){
+        webtorrentWraper.seedTorrent(torrentPath,Config.DOWNLOAD_FOLDER);
     }
 
     public void closeConnection()  {

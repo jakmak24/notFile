@@ -14,7 +14,7 @@ public class ClientMain {
             groupID = args[1];
         }
 
-        Client client = new Client(userID, groupID);
+        Client client = new Client(new User(userID, groupID));
         client.openConnection();
 
         Scanner scan = new Scanner(System.in);
@@ -38,6 +38,16 @@ public class ClientMain {
             if (s.startsWith("get")){
                 String torrentID = s.split("\\s+")[1];
                 client.getTorrent(torrentID);
+            }
+
+            if (s.startsWith("download ")){
+                String torrentID = s.split("\\s+")[1];
+                client.downloadTorrent(torrentID);
+            }
+
+            if (s.startsWith("seed ")){
+                String torrentID = s.split("\\s+")[1];
+                client.seedTorrent(torrentID);
             }
         }
 
