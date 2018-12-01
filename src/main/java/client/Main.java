@@ -1,10 +1,6 @@
 package client;
 
-import com.rabbitmq.client.AMQP;
-
-import java.io.IOException;
 import java.util.Scanner;
-import java.util.concurrent.TimeoutException;
 
 public class Main {
 
@@ -21,18 +17,22 @@ public class Main {
         Client client = new Client(userID, groupID);
         client.openConnection();
 
-
         Scanner scan = new Scanner(System.in);
         while (true) {
 
             String s = scan.nextLine();
-            if (s.equals("quit")) break;
+            if (s.equals("quit ")) break;
             if (s.startsWith("search ")){
                 String query = s.substring("search ".length());
                 client.searchTorrents(query);
             }
+
+            if (s.startsWith("create ")){
+                System.out.println(client.createTorrent(s.split("\\s+")[1],s.split("\\s+")[2]));
+            }
+
             if (s.startsWith("add ")){
-                String torrent = s.substring("add ".length());
+                String torrent = s.split("\\s+")[1];
                 client.addTorrent(torrent);
             }
             if (s.startsWith("get ")){

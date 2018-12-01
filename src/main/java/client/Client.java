@@ -1,8 +1,14 @@
 package client;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.*;
+import data.TorrentRecordMessage;
+import data.GetTorrentMessage;
+import data.MetaData;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.concurrent.TimeoutException;
 
 public class Client {
@@ -10,6 +16,8 @@ public class Client {
     private final String userID;
     private final String groupID;
     private static final String serverGet = "serverGet";
+    private static final String serverAdd = "serverAdd";
+    private final static String serverSearch = "serverSearch";
     private Connection connection;
     private Channel sendChannel;
     private WebtorrentWraper webtorrentWraper;
@@ -40,68 +48,85 @@ public class Client {
             groupChannel.queueBind(groupQueue, "group", groupID);
 
 
-            new Thread(() -> {
-                Consumer consumer = new DefaultConsumer(userChannel) {
-                    @Override
-                    public void handleDelivery(String consumerTag, Envelope envelope,
-                                               AMQP.BasicProperties properties, byte[] body)
-                            throws IOException {
-                        String message = new String(body, "UTF-8");
-                        System.out.println(" [x] User received '" + message + "'");
+            Consumer userConsumer = new DefaultConsumer(userChannel) {
+                @Override
+                public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
+                    String message = new String(body, "UTF-8");
+                    System.out.println(" [USER] Received '" + message + "'");
 
-                        sendChannel.basicPublish("group", groupID, null, ("User:" + userID + " downloaded").getBytes());
-
-                    }
-                };
-
-                try {
-                    userChannel.basicConsume(userQueue, true, consumer);
-                } catch (IOException e) {
-                    e.printStackTrace();
                 }
-            }
-            ).start();
+            };
 
-        new Thread(() -> {
-            Consumer consumer = new DefaultConsumer(groupChannel) {
+            Consumer groupConsumer = new DefaultConsumer(groupChannel) {
                 @Override
                 public void handleDelivery(String consumerTag, Envelope envelope,
                                            AMQP.BasicProperties properties, byte[] body)
                         throws IOException {
                     String message = new String(body, "UTF-8");
-                    System.out.println(" [x] Group received '" + message + "'");
+                    System.out.println(" [Group] Received '" + message + "'");
                 }
             };
 
-            try {
-                groupChannel.basicConsume(groupQueue, true, consumer);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        ).start();
+            new Thread(()->{
+                try {
+                    groupChannel.basicConsume(groupQueue, true, groupConsumer);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }).start();
+            new Thread(()->{
+                try {
+                    userChannel.basicConsume(userQueue, true, userConsumer);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }).start();
 
         } catch (IOException | TimeoutException e) {
             e.printStackTrace();
         }
     }
 
+
     public void searchTorrents(String query){
-        //TODO send torrent file to server search for torrent
+        AMQP.BasicProperties props = new AMQP.BasicProperties.Builder().replyTo(userID).build();
+        try {
+            sendChannel.basicPublish("server", serverSearch, props, query.getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public String createTorrent(String fileName, String filePath){
+        return webtorrentWraper.createTorrent(fileName,filePath,Config.TORRENT_FOLDER,
+                Config.TRACKER_ANNOUNCE);
     }
 
     public void addTorrent(String torrent){
-        //TODO send torrent file to server
+        File f = new File(torrent);
+        long size = f.length();
+
+        AMQP.BasicProperties props = new AMQP.BasicProperties.Builder().replyTo(userID).build();
+        try {
+            byte[] fileData = Files.readAllBytes(f.toPath());
+            TorrentRecordMessage torrentRecordMessage = new TorrentRecordMessage(new MetaData(f.getName(),userID,0,0,size),fileData);
+            String json = new ObjectMapper().writeValueAsString(torrentRecordMessage);
+            sendChannel.basicPublish("server", serverAdd, props, json.getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
     public void getTorrent(String torrentID){
         AMQP.BasicProperties props = new AMQP.BasicProperties.Builder().replyTo(userID).build();
         try {
-            sendChannel.basicPublish("server", serverGet, props, torrentID.getBytes());
+            GetTorrentMessage getTorrentMessage = new GetTorrentMessage(Integer.parseInt(torrentID));
+            String json = new ObjectMapper().writeValueAsString(getTorrentMessage);
+            sendChannel.basicPublish("server", serverGet, props, json.getBytes());
         } catch (IOException e) {
             e.printStackTrace();
         }
-        System.out.println(" [x] Sent '" + torrentID + "'");
     }
 
     public void closeConnection()  {
