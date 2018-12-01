@@ -25,7 +25,6 @@ public class WebtorrentWraper {
 
     public String createTorrent(String torrentName,String pathToFile,String outPath,String announce){
 
-
         try {
             Process exec = Runtime.getRuntime().exec(
                     webtorrentPath +
@@ -40,13 +39,30 @@ public class WebtorrentWraper {
         return outPath+"/"+torrentName+".torrent";
     }
 
-
-    public static void main(String[] args) {
-
-        new WebtorrentWraper().createTorrent("elo","./down/todo.txt",Config.TORRENT_FOLDER,
-                Config.TRACKER_ANNOUNCE);
-
+    public void downloadTorrent(String pathToTorrent,String outDir){
+        try {
+            Process exec = Runtime.getRuntime().exec(
+                    webtorrentPath +
+                            " download "+ pathToTorrent +
+                            " --out "+ outDir);
+            exec.waitFor();
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
-
+    public void seedTorrent(String pathToTorrent,String outDir){
+        try {
+            Process exec = Runtime.getRuntime().exec(
+                    webtorrentPath +
+                            " download "+ pathToTorrent +
+                            " --out "+ outDir+
+                            " --keep-seeding"
+            );
+            exec.waitFor();
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+    
 }

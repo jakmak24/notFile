@@ -2,7 +2,7 @@ package client;
 
 import java.util.Scanner;
 
-public class Main {
+public class ClientMain {
 
     public static void main(String[] args) {
 
@@ -21,22 +21,22 @@ public class Main {
         while (true) {
 
             String s = scan.nextLine();
-            if (s.equals("quit ")) break;
-            if (s.startsWith("search ")){
+            if (s.startsWith("quit")) break;
+            if (s.startsWith("search")){
                 String query = s.substring("search ".length());
                 client.searchTorrents(query);
             }
 
-            if (s.startsWith("create ")){
+            if (s.startsWith("create")){
                 System.out.println(client.createTorrent(s.split("\\s+")[1],s.split("\\s+")[2]));
             }
 
-            if (s.startsWith("add ")){
+            if (s.startsWith("add")){
                 String torrent = s.split("\\s+")[1];
                 client.addTorrent(torrent);
             }
-            if (s.startsWith("get ")){
-                String torrentID = s.substring("get ".length());
+            if (s.startsWith("get")){
+                String torrentID = s.split("\\s+")[1];
                 client.getTorrent(torrentID);
             }
         }
