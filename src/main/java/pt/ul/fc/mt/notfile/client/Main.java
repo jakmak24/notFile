@@ -14,7 +14,7 @@ public class Main {
             groupID = args[1];
         }
 
-        Client client = new Client(userID, groupID);
+        ClientApi client = new ClientApi(new Client(userID, groupID));
         client.openConnection();
 
 
