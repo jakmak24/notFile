@@ -1,4 +1,4 @@
-package server;
+package pt.ul.fc.mt.notfile.server;
 
 import com.rabbitmq.client.*;
 
@@ -18,27 +18,25 @@ public class Server {
         Channel channel = connection.createChannel();
         Channel channelResponse = connection.createChannel();
 
-        channel.exchangeDeclare("server",BuiltinExchangeType.DIRECT);
+        channel.exchangeDeclare("server", BuiltinExchangeType.DIRECT);
         String searchQueue = channel.queueDeclare(serverGet, false, false, false, null).getQueue();
-        channel.queueBind(searchQueue,"server",serverGet);
+        channel.queueBind(searchQueue, "server", serverGet);
         System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
 
         Consumer consumer = new DefaultConsumer(channel) {
             @Override
             public void handleDelivery(String consumerTag, Envelope envelope,
                                        AMQP.BasicProperties properties, byte[] body)
-                    throws IOException {
+                throws IOException {
                 String message = new String(body, "UTF-8");
                 System.out.println(" [x] Received '" + message + "'");
 
-                channelResponse.basicPublish("user",properties.getReplyTo(),null,("TorrentFile:"+message).getBytes());
+                channelResponse.basicPublish("user", properties.getReplyTo(), null, ("TorrentFile:" + message).getBytes());
             }
         };
 
         channel.basicConsume(serverGet, true, consumer);
-
     }
-
 }
 
 

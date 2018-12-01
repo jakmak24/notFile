@@ -1,4 +1,4 @@
-package client;
+package pt.ul.fc.mt.notfile.client;
 
 import com.rabbitmq.client.*;
 
@@ -12,16 +12,16 @@ public class Client {
     private static final String serverGet = "serverGet";
     private Connection connection;
     private Channel sendChannel;
-    private WebtorrentWraper webtorrentWraper;
+    private WebtorrentWrapper webtorrentWrapper;
 
 
-    public Client(String userID, String groupID){
+    public Client(String userID, String groupID) {
         this.userID = userID;
         this.groupID = groupID;
-        this.webtorrentWraper = new WebtorrentWraper();
+        this.webtorrentWrapper = new WebtorrentWrapper();
     }
 
-    public void openConnection()  {
+    public void openConnection() {
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(Config.RABBIT_MQ_HOST);
 
@@ -45,7 +45,7 @@ public class Client {
                     @Override
                     public void handleDelivery(String consumerTag, Envelope envelope,
                                                AMQP.BasicProperties properties, byte[] body)
-                            throws IOException {
+                        throws IOException {
                         String message = new String(body, "UTF-8");
                         System.out.println(" [x] User received '" + message + "'");
 
@@ -59,42 +59,40 @@ public class Client {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            }
-            ).start();
+            }).start();
 
-        new Thread(() -> {
-            Consumer consumer = new DefaultConsumer(groupChannel) {
-                @Override
-                public void handleDelivery(String consumerTag, Envelope envelope,
-                                           AMQP.BasicProperties properties, byte[] body)
+            new Thread(() -> {
+                Consumer consumer = new DefaultConsumer(groupChannel) {
+                    @Override
+                    public void handleDelivery(String consumerTag, Envelope envelope,
+                                               AMQP.BasicProperties properties, byte[] body)
                         throws IOException {
-                    String message = new String(body, "UTF-8");
-                    System.out.println(" [x] Group received '" + message + "'");
-                }
-            };
+                        String message = new String(body, "UTF-8");
+                        System.out.println(" [x] Group received '" + message + "'");
+                    }
+                };
 
-            try {
-                groupChannel.basicConsume(groupQueue, true, consumer);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        ).start();
+                try {
+                    groupChannel.basicConsume(groupQueue, true, consumer);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }).start();
 
         } catch (IOException | TimeoutException e) {
             e.printStackTrace();
         }
     }
 
-    public void searchTorrents(String query){
+    public void searchTorrents(String query) {
         //TODO send torrent file to server search for torrent
     }
 
-    public void addTorrent(String torrent){
+    public void addTorrent(String torrent) {
         //TODO send torrent file to server
     }
 
-    public void getTorrent(String torrentID){
+    public void getTorrent(String torrentID) {
         AMQP.BasicProperties props = new AMQP.BasicProperties.Builder().replyTo(userID).build();
         try {
             sendChannel.basicPublish("server", serverGet, props, torrentID.getBytes());
@@ -104,14 +102,12 @@ public class Client {
         System.out.println(" [x] Sent '" + torrentID + "'");
     }
 
-    public void closeConnection()  {
+    public void closeConnection() {
         try {
             sendChannel.close();
             connection.close();
-
         } catch (IOException | TimeoutException e) {
             e.printStackTrace();
         }
-
     }
 }

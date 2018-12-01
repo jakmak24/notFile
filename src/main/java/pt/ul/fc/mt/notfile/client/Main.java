@@ -1,10 +1,6 @@
-package client;
+package pt.ul.fc.mt.notfile.client;
 
-import com.rabbitmq.client.AMQP;
-
-import java.io.IOException;
 import java.util.Scanner;
-import java.util.concurrent.TimeoutException;
 
 public class Main {
 
@@ -13,7 +9,7 @@ public class Main {
         String userID = "Kuba";
         String groupID = "AGH_Cyfronet";
 
-        if (args.length ==2) {
+        if (args.length == 2) {
             userID = args[0];
             groupID = args[1];
         }
@@ -27,15 +23,15 @@ public class Main {
 
             String s = scan.nextLine();
             if (s.equals("quit")) break;
-            if (s.startsWith("search ")){
+            if (s.startsWith("search ")) {
                 String query = s.substring("search ".length());
                 client.searchTorrents(query);
             }
-            if (s.startsWith("add ")){
+            if (s.startsWith("add ")) {
                 String torrent = s.substring("add ".length());
                 client.addTorrent(torrent);
             }
-            if (s.startsWith("get ")){
+            if (s.startsWith("get ")) {
                 String torrentID = s.substring("get ".length());
                 client.getTorrent(torrentID);
             }
