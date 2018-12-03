@@ -1,13 +1,12 @@
 package client;
 
 import java.io.IOException;
-import java.util.Map;
 
-public class WebtorrentWraper {
+public class WebtorrentWrapper {
 
     private String webtorrentPath;
 
-    public WebtorrentWraper(){
+    public WebtorrentWrapper(){
 
         if(System.getProperty("os.name").contains("Linux")){
             webtorrentPath = "/usr/local/bin/webtorrent";

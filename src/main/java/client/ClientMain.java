@@ -1,6 +1,11 @@
 package client;
 
+import data.Attribute;
+
+import java.util.Arrays;
+import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 public class ClientMain {
 
@@ -19,39 +24,56 @@ public class ClientMain {
 
         Scanner scan = new Scanner(System.in);
         while (true) {
+            String line = scan.nextLine();
+            String[] s = line.split("\\s+");
+            String command = s[0];
 
-            String s = scan.nextLine();
-            if (s.startsWith("quit")) break;
-            if (s.startsWith("search")){
-                String query = s.substring("search ".length());
-                client.searchTorrents(query);
+            if (command.equals("quit")) {
+                break;
             }
 
-            if (s.startsWith("create")){
-                System.out.println(client.createTorrent(s.split("\\s+")[1],s.split("\\s+")[2]));
-            }
-
-            if (s.startsWith("add")){
-                String torrent = s.split("\\s+")[1];
-                client.addTorrent(torrent);
-            }
-            if (s.startsWith("get")){
-                String torrentID = s.split("\\s+")[1];
-                client.getTorrent(torrentID);
-            }
-
-            if (s.startsWith("download ")){
-                String torrentID = s.split("\\s+")[1];
-                client.downloadTorrent(torrentID);
-            }
-
-            if (s.startsWith("seed ")){
-                String torrentID = s.split("\\s+")[1];
-                client.seedTorrent(torrentID);
+            switch (command) {
+                case "search":
+                    // attributes in the form:
+                    // <name> <relation> <value>,<name> <relation> <value>,...
+                    // TODO: check format.
+                    String[] attrs = line.substring("search ".length()).split(",");
+                    List<Attribute> attributes = Arrays.stream(attrs)
+                        .map(Attribute::parse)
+                        .collect(Collectors.toList());
+                    client.searchTorrents(attributes);
+                    break;
+                case "create":
+                    System.out.println(client.createTorrent(s[1], s[2]));
+                    break;
+                case "add":
+                    // <file_name> <attributes>
+                    // attributes in the form:
+                    // <attr1_name> = <attr1_value>,<attr2_name> = <attr2_value>,...
+                    attrs = line.substring("add ".length() + s[1].length() + 1).split(",");
+                    attributes = Arrays.stream(attrs)
+                        .map(Attribute::parse)
+                        .collect(Collectors.toList());
+                    client.addTorrent(s[1], attributes);
+                    break;
+                case "get":
+                    client.getTorrent(s[1]);
+                    break;
+                case "download":
+                    client.downloadTorrent(s[1]);
+                    break;
+                case "seed":
+                    client.seedTorrent(s[1]);
+                    break;
+                default:
+                    printHelp();
             }
         }
-
         client.closeConnection();
     }
 
+    private static void printHelp() {
+        System.out.println("Usage: <command> <args>");
+        System.out.println("Commands: quit, search, create, add, get, download, seed");
+    }
 }

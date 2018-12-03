@@ -1,16 +1,19 @@
 package server;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
+import data.Attribute;
 import data.MessageConfig;
 import data.MetaData;
 import data.SearchResponseTorrentMessage;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 public class SearchMessageConsumer extends DefaultConsumer {
 
@@ -26,6 +29,8 @@ public class SearchMessageConsumer extends DefaultConsumer {
         String message = new String(body, "UTF-8");
         System.out.println(" [Search] Received '" + message + "'");
 
+        List<Attribute> searchAttrs = new ObjectMapper().readValue(message, new TypeReference<List<Attribute>>(){});
+        // TODO: use searchAttrs to select records.
         ArrayList<MetaData> queryResult = server.getDatabase().getAllTorrents();
         String json = new ObjectMapper().writeValueAsString(new SearchResponseTorrentMessage(queryResult));
 
