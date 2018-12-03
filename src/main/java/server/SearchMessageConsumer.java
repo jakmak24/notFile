@@ -7,7 +7,7 @@ import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import data.MessageConfig;
 import data.MetaData;
-import data.SearchTorrentMessage;
+import data.SearchResponseTorrentMessage;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,8 +25,10 @@ public class SearchMessageConsumer extends DefaultConsumer {
                                byte[] body) throws IOException {
         String message = new String(body, "UTF-8");
         System.out.println(" [Search] Received '" + message + "'");
+
         ArrayList<MetaData> queryResult = server.getDatabase().getAllTorrents();
-        String json = new ObjectMapper().writeValueAsString(new SearchTorrentMessage(queryResult));
+        String json = new ObjectMapper().writeValueAsString(new SearchResponseTorrentMessage(queryResult));
+
         AMQP.BasicProperties props = new AMQP.BasicProperties.Builder().contentType(MessageConfig.ACTION_SEARCH).build();
         server.getChannelResponse().basicPublish(MessageConfig.USER_EXCHANGE,properties.getReplyTo(),props,
                 json.getBytes());

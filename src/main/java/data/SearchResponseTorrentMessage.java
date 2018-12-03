@@ -3,13 +3,13 @@ package data;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-public class SearchTorrentMessage implements Serializable{
+public class SearchResponseTorrentMessage implements Serializable{
 
     private ArrayList<MetaData> records;
 
-    public SearchTorrentMessage(){}
+    public SearchResponseTorrentMessage(){}
 
-    public SearchTorrentMessage(ArrayList<MetaData> records){
+    public SearchResponseTorrentMessage(ArrayList<MetaData> records){
         this.records = records;
     }
 

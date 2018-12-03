@@ -13,5 +13,5 @@ dependencies {
     compile 'com.rabbitmq:amqp-client:5.5.0'
     compile 'org.slf4j:slf4j-simple:1.6.2'
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.0.1'
-
+    compile group: 'mysql', name: 'mysql-connector-java', version: '5.1.44'
 }

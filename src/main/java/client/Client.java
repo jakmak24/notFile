@@ -16,8 +16,12 @@ public class Client {
 
     private Connection connection;
     private Channel sendChannel;
+    private Channel userChannel;
+    private Channel groupChannel;
     private WebtorrentWraper webtorrentWraper= new WebtorrentWraper();
     private User user;
+    private String groupQueue;
+    private String userQueue;
 
     public Client(User user){
         this.user = user;
@@ -36,41 +40,44 @@ public class Client {
 
         try {
             connection = factory.newConnection();
-            Channel userChannel = connection.createChannel();
-            Channel groupChannel = connection.createChannel();
+            userChannel = connection.createChannel();
+            groupChannel = connection.createChannel();
             sendChannel = connection.createChannel();
 
-            String userQueue = userChannel.queueDeclare().getQueue();
+            userQueue = userChannel.queueDeclare().getQueue();
             userChannel.exchangeDeclare(MessageConfig.USER_EXCHANGE, BuiltinExchangeType.DIRECT);
             userChannel.queueBind(userQueue, MessageConfig.USER_EXCHANGE, user.getUserID());
 
-            String groupQueue = groupChannel.queueDeclare().getQueue();
+            groupQueue = groupChannel.queueDeclare().getQueue();
             groupChannel.exchangeDeclare(MessageConfig.GROUP_EXCHANGE, BuiltinExchangeType.DIRECT);
             groupChannel.queueBind(groupQueue, MessageConfig.GROUP_EXCHANGE, user.getGroupID());
 
-            Consumer userConsumer = new UserMessageConsumer(userChannel,this);
-            Consumer groupConsumer = new GroupMessageConsumer(userChannel,this);
-
-            new Thread(()->{
-                try {
-                    groupChannel.basicConsume(groupQueue, true, groupConsumer);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }).start();
-            new Thread(()->{
-                try {
-                    userChannel.basicConsume(userQueue, true, userConsumer);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }).start();
+            startConsumers();
 
         } catch (IOException | TimeoutException e) {
             e.printStackTrace();
         }
     }
 
+    public void startConsumers(){
+        Consumer userConsumer = new UserMessageConsumer(userChannel,this);
+        Consumer groupConsumer = new GroupMessageConsumer(userChannel,this);
+
+        new Thread(()->{
+            try {
+                groupChannel.basicConsume(groupQueue, true, groupConsumer);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
+        new Thread(()->{
+            try {
+                userChannel.basicConsume(userQueue, true, userConsumer);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
 
     public void searchTorrents(String query){
         AMQP.BasicProperties props = new AMQP.BasicProperties.Builder()
@@ -99,7 +106,10 @@ public class Client {
                 .build();
         try {
             byte[] fileData = Files.readAllBytes(f.toPath());
+
+            //TODO: pass metadata
             MetaData metaData = new MetaData(f.getName(),user.getUserID(),0,0,size);
+
             TorrentRecordMessage torrentRecordMessage = new TorrentRecordMessage(metaData,fileData);
             String json = new ObjectMapper().writeValueAsString(torrentRecordMessage);
             sendChannel.basicPublish(MessageConfig.SERVER_EXCHANGE, MessageConfig.serverAdd, props, json.getBytes());
@@ -139,7 +149,9 @@ public class Client {
     }
 
     public void seedTorrent(String torrentPath){
-        webtorrentWraper.seedTorrent(torrentPath,Config.DOWNLOAD_FOLDER);
+        new Thread(()->{
+            webtorrentWraper.seedTorrent(torrentPath,Config.DOWNLOAD_FOLDER);
+        }).start();
     }
 
     public void closeConnection()  {

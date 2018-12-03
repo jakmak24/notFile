@@ -7,7 +7,7 @@ import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import data.MessageConfig;
 import data.MetaData;
-import data.SearchTorrentMessage;
+import data.SearchResponseTorrentMessage;
 import data.TorrentRecordMessage;
 
 import java.io.IOException;
@@ -34,12 +34,12 @@ public class UserMessageConsumer extends DefaultConsumer {
                 System.out.println(" [User] GET_RESPONSE '" + torrentRecordMessage.getMetaData().getName() + "'");
                 break;
             case MessageConfig.ACTION_SEARCH:
-                SearchTorrentMessage searchTorrentMessage = objectMapper.readValue(body,SearchTorrentMessage.class);
+                SearchResponseTorrentMessage searchResponseTorrentMessage = objectMapper.readValue(body, SearchResponseTorrentMessage.class);
                 System.out.println(" [User] SEARCH_RESPONSE: '");
-                if(searchTorrentMessage.getRecords().isEmpty()){
+                if(searchResponseTorrentMessage.getRecords().isEmpty()){
                     System.out.println("No results matching");
                 }
-                for(MetaData md:searchTorrentMessage.getRecords()){
+                for(MetaData md: searchResponseTorrentMessage.getRecords()){
                     System.out.format("|%12s|%15d|%7d|%7d|%13s|\n", md.getName(), md.getFileLength(), md.getX(),md.getY(),md.getOwnerID());
                 }
                 break;
