@@ -99,8 +99,8 @@ public class Client {
     public void addTorrent(String torrent, List<Attribute> attributes) {
         File f = new File(torrent);
         long size = f.length();
-        attributes.add(Attribute.parse("fileLength = " + size));
-        attributes.add(Attribute.parse("owner_id = " + user.getUserID()));
+        attributes.add(Attribute.parse("filesize = " + size));
+        attributes.add(Attribute.parse("owner = " + user.getUserID()));
         // TODO: Add anything else that's needed.
         MetaData metaData = convertToMetaData(attributes);
 
@@ -126,7 +126,7 @@ public class Client {
                 case "name":
                     builder.name(attr.getValue());
                     break;
-                case "owner_id":
+                case "owner":
                     builder.ownerID(attr.getValue());
                     break;
                 case "x":
@@ -135,11 +135,11 @@ public class Client {
                 case "y":
                     builder.y(Integer.parseInt(attr.getValue()));
                     break;
-                case "fileLength":
+                case "filesize":
                     builder.fileLength(Long.parseLong(attr.getValue()));
                     break;
                 default:
-                    System.out.println("Ignoring invalid attribute: " + attr.getName() + "=" + attr.getValue());
+                    throw new IllegalArgumentException("Unsupported attribute name: " + attr.getName());
             }
         }
         return builder.build();

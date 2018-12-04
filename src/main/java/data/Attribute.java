@@ -7,6 +7,14 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Attribute implements Serializable {
+    public static final Map<Relation, String> relationToOperator = Stream.of(
+        new SimpleEntry<>(Relation.EQ, "="),
+        new SimpleEntry<>(Relation.NEQ, "!="),
+        new SimpleEntry<>(Relation.LT, "<"),
+        new SimpleEntry<>(Relation.LTE, "<="),
+        new SimpleEntry<>(Relation.GT, ">"),
+        new SimpleEntry<>(Relation.GTE, ">=")
+    ).collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue));
     private static final Map<String, Relation> supportedRelations = Stream.of(
         new SimpleEntry<>("=", Relation.EQ),
         new SimpleEntry<>("!=", Relation.NEQ),
@@ -40,6 +48,33 @@ public class Attribute implements Serializable {
             throw new IllegalArgumentException("Unsupported relation: " + parts[1]);
         }
         return new Attribute(parts[0], relation, parts[2]);
+    }
+
+    /**
+     * Returns whether the {@code otherValue} matches the attribute (i.e. if the attribute is true for the given value).
+     */
+    public boolean match(String otherValue) {
+        if (this.relation == Relation.EQ) {
+            return this.getValue().equals(otherValue);
+        }
+        if (this.relation == Relation.NEQ) {
+            return !this.getValue().equals(otherValue);
+        }
+        if (!otherValue.trim().matches("\\d+")) {
+            // Cannot compare strings using relations other than == and !=.
+            throw new IllegalArgumentException("Invalid operation on strings: " + this.relation);
+        }
+        switch (this.relation) {
+            case LT:
+                return Long.parseLong(otherValue) < Long.parseLong(this.getValue());
+            case LTE:
+                return Long.parseLong(otherValue) <= Long.parseLong(this.getValue());
+            case GT:
+                return Long.parseLong(otherValue) > Long.parseLong(this.getValue());
+            case GTE:
+                return Long.parseLong(otherValue) >= Long.parseLong(this.getValue());
+        }
+        throw new IllegalArgumentException("Unsupported relation: " + this.relation);
     }
 
     public String getName() {

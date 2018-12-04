@@ -30,8 +30,7 @@ public class SearchMessageConsumer extends DefaultConsumer {
         System.out.println(" [Search] Received '" + message + "'");
 
         List<Attribute> searchAttrs = new ObjectMapper().readValue(message, new TypeReference<List<Attribute>>(){});
-        // TODO: use searchAttrs to select records.
-        ArrayList<MetaData> queryResult = server.getDatabase().getAllTorrents();
+        List<MetaData> queryResult = server.getDatabase().searchTorrents(searchAttrs);
         String json = new ObjectMapper().writeValueAsString(new SearchResponseTorrentMessage(queryResult));
 
         AMQP.BasicProperties props = new AMQP.BasicProperties.Builder().contentType(MessageConfig.ACTION_SEARCH).build();
