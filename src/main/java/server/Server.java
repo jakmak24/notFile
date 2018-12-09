@@ -1,12 +1,10 @@
 package server;
 
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.*;
-import data.*;
+import data.MessageConfig;
+import data.MetaData;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.concurrent.TimeoutException;
 
 public class Server {

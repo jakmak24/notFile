@@ -4,7 +4,7 @@ use notFile;
 CREATE TABLE torrents (
         id INT NOT NULL AUTO_INCREMENT,
         name VARCHAR(30) NOT NULL,
-	filesize long not null,
+	    filesize long not null,
         x int,
         y int,
         owner VARCHAR(40) NOT NULL,
