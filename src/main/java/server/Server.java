@@ -3,6 +3,7 @@ package server;
 import com.rabbitmq.client.*;
 import data.MessageConfig;
 import data.MetaData;
+import data.messages.SearchResponseTorrentMessage;
 
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
@@ -38,7 +39,7 @@ public class Server {
             String addQueue = channel.queueDeclare(MessageConfig.serverAdd, false, false, false, null).getQueue();
             channel.queueBind(addQueue,MessageConfig.SERVER_EXCHANGE,MessageConfig.serverAdd);
 
-            database = new Database();
+            database = new MySQLDatabase();
 
             System.out.println(" [SERVER] Waiting for data. To exit press CTRL+C");
 
@@ -83,10 +84,12 @@ public class Server {
     }
 
     public void listDatabase(){
-        System.out.format("|%12s|%15s|%7s|%7s|%13s|\n", "NAME", "FILE SIZE", "X","Y","OWNER");
-
-        for(MetaData md: database.getAllTorrents()){
-            System.out.format("|%12s|%15d|%7d|%7d|%13s|\n", md.getName(), md.getFileLength(), md.getX(),md.getY(),md.getOwnerID());
+        System.out.format("|%7s|%12s|%15s|%7s|%7s|%13s|\n","ID","NAME", "FILE SIZE", "X","Y","OWNER");
+        SearchResponseTorrentMessage srtm = database.getAllTorrents();
+        for(int i = 0; i<srtm.getRecordsMetadata().size();i++){
+            int index = srtm.getRecordsIndexes().get(i);
+            MetaData md = srtm.getRecordsMetadata().get(i);
+            System.out.format("|%7d|%12s|%15d|%7d|%7d|%13s|\n", index, md.getName(), md.getFileLength(), md.getX(),md.getY(),md.getOwnerID());
         }
 
     }

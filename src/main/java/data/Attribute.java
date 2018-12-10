@@ -2,11 +2,14 @@ package data;
 
 import java.io.Serializable;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+
 public class Attribute implements Serializable {
+
     public static final Map<Relation, String> relationToOperator = Stream.of(
         new SimpleEntry<>(Relation.EQ, "="),
         new SimpleEntry<>(Relation.NEQ, "!="),
@@ -28,14 +31,34 @@ public class Attribute implements Serializable {
         EQ, NEQ, LT, LTE, GT, GTE,
     }
 
-    private final String name;
-    private final Relation relation;
-    private final String value;
+    public void setName(String name) {
+        this.name = name;
+    }
 
-    public Attribute(String name, Relation relation, String value) {
+    private String name;
+    private Relation relation;
+    private String value;
+    private String type;
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public void setRelation(Relation relation) {
+        this.relation = relation;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
+
+    public Attribute(){}
+
+    public Attribute(String name, Relation relation, String value, String type) {
         this.name = name;
         this.relation = relation;
         this.value = value;
+        this.type = type;
     }
 
     public static Attribute parse(String attr) {
@@ -47,32 +70,84 @@ public class Attribute implements Serializable {
         if (relation == null) {
             throw new IllegalArgumentException("Unsupported relation: " + parts[1]);
         }
-        return new Attribute(parts[0], relation, parts[2]);
+        switch (parts[0].trim()){
+            case "name":
+                return new Attribute(parts[0], relation, parts[2],"String");
+            case "x":
+                return  new Attribute(parts[0], relation, (parts[2]),"Integer");
+            case "y":
+                return  new Attribute(parts[0], relation, (parts[2]),"Integer");
+            case "owner":
+                return  new Attribute(parts[0], relation, parts[2],"String");
+            case "filesize":
+                return new Attribute(parts[0], relation, (parts[2]),"Long");
+            default:
+                throw new IllegalArgumentException("Unsupported argument: " + parts[0]);
+        }
+    }
+
+    public static MetaData convertToMetaData(List<Attribute> attributes) {
+        MetaData.Builder builder = new MetaData.Builder();
+        for (Attribute attr : attributes) {
+            switch (attr.getName()) {
+                case "name":
+                    builder.name(attr.getValue());
+                    break;
+                case "owner":
+                    builder.ownerID(attr.getValue());
+                    break;
+                case "x":
+                    builder.x(Integer.parseInt(attr.getValue()));
+                    break;
+                case "y":
+                    builder.y(Integer.parseInt(attr.getValue()));
+                    break;
+                case "filesize":
+                    builder.fileLength(Long.parseLong(attr.getValue()));
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unsupported attribute name: " + attr.getName());
+            }
+        }
+        return builder.build();
     }
 
     /**
      * Returns whether the {@code otherValue} matches the attribute (i.e. if the attribute is true for the given value).
      */
     public boolean match(String otherValue) {
+
+        Comparable v=null;
+        Comparable oV=null;
+        switch (type) {
+            case "Integer":
+                v = Integer.parseInt(value);
+                oV = Integer.parseInt(otherValue);
+                break;
+            case "Long":
+                v= Long.parseLong(value);
+                oV=Long.parseLong(otherValue);
+                break;
+            case "String":
+                v =value;
+                oV = otherValue;
+        }
+
         if (this.relation == Relation.EQ) {
-            return this.getValue().equals(otherValue);
+            return v.equals(oV);
         }
         if (this.relation == Relation.NEQ) {
-            return !this.getValue().equals(otherValue);
-        }
-        if (!otherValue.trim().matches("\\d+")) {
-            // Cannot compare strings using relations other than == and !=.
-            throw new IllegalArgumentException("Invalid operation on strings: " + this.relation);
+            return !v.equals(oV);
         }
         switch (this.relation) {
             case LT:
-                return Long.parseLong(otherValue) < Long.parseLong(this.getValue());
+                return v.compareTo(oV) < 0;
             case LTE:
-                return Long.parseLong(otherValue) <= Long.parseLong(this.getValue());
+                return v.compareTo(oV) <= 0;
             case GT:
-                return Long.parseLong(otherValue) > Long.parseLong(this.getValue());
+                return v.compareTo(oV) > 0;
             case GTE:
-                return Long.parseLong(otherValue) >= Long.parseLong(this.getValue());
+                return v.compareTo(oV) >= 0;
         }
         throw new IllegalArgumentException("Unsupported relation: " + this.relation);
     }
@@ -87,5 +162,9 @@ public class Attribute implements Serializable {
 
     public String getValue() {
         return value;
+    }
+
+    public String getType() {
+        return type;
     }
 }

@@ -3,6 +3,9 @@ package client;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.*;
 import data.*;
+import data.messages.GetTorrentMessage;
+import data.messages.SearchQueryMessage;
+import data.messages.TorrentRecordMessage;
 
 import java.io.File;
 import java.io.IOException;
@@ -84,7 +87,7 @@ public class Client {
             .contentType(MessageConfig.ACTION_SEARCH)
             .build();
         try {
-            String json = new ObjectMapper().writeValueAsString(attributes);
+            String json = new ObjectMapper().writeValueAsString(new SearchQueryMessage(attributes));
             sendChannel.basicPublish(MessageConfig.SERVER_EXCHANGE, MessageConfig.serverSearch, props, json.getBytes());
         } catch (IOException e) {
             e.printStackTrace();
@@ -102,7 +105,7 @@ public class Client {
         attributes.add(Attribute.parse("filesize = " + size));
         attributes.add(Attribute.parse("owner = " + user.getUserID()));
         // TODO: Add anything else that's needed.
-        MetaData metaData = convertToMetaData(attributes);
+        MetaData metaData = Attribute.convertToMetaData(attributes);
 
         AMQP.BasicProperties props = new AMQP.BasicProperties.Builder()
             .replyTo(user.getUserID())
@@ -117,32 +120,6 @@ public class Client {
             e.printStackTrace();
         }
 
-    }
-
-    private MetaData convertToMetaData(List<Attribute> attributes) {
-        MetaData.Builder builder = new MetaData.Builder();
-        for (Attribute attr : attributes) {
-            switch (attr.getName()) {
-                case "name":
-                    builder.name(attr.getValue());
-                    break;
-                case "owner":
-                    builder.ownerID(attr.getValue());
-                    break;
-                case "x":
-                    builder.x(Integer.parseInt(attr.getValue()));
-                    break;
-                case "y":
-                    builder.y(Integer.parseInt(attr.getValue()));
-                    break;
-                case "filesize":
-                    builder.fileLength(Long.parseLong(attr.getValue()));
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unsupported attribute name: " + attr.getName());
-            }
-        }
-        return builder.build();
     }
 
     public void getTorrent(String torrentID) {

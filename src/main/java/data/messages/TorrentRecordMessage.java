@@ -1,10 +1,12 @@
-package data;
+package data.messages;
+
+import data.MetaData;
 
 import java.io.Serializable;
 
 public class TorrentRecordMessage implements Serializable {
 
-    private  MetaData metaData;
+    private MetaData metaData;
     private byte[] torrentFileData;
 
     public TorrentRecordMessage(){}

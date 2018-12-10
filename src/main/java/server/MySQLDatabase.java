@@ -2,25 +2,32 @@ package server;
 
 import data.Attribute;
 import data.MetaData;
-import data.TorrentRecordMessage;
+import data.messages.SearchResponseTorrentMessage;
+import data.messages.TorrentRecordMessage;
 
 import javax.sql.rowset.serial.SerialBlob;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
-public class MySQLAccess {
+public class MySQLDatabase extends Database{
     private Connection connect;
 
-    public MySQLAccess() throws SQLException, ClassNotFoundException {
+    public MySQLDatabase() {
         // This will load the MySQL driver, each DB has its own driver
-        Class.forName("com.mysql.jdbc.Driver");
+        try {
+            Class.forName("com.mysql.jdbc.Driver");
+            connect = DriverManager.getConnection("jdbc:mysql://localhost/notFile?"
+                    + "user=root&password=admin");
+        } catch (ClassNotFoundException | SQLException e) {
+            e.printStackTrace();
+        }
         // Setup the connection with the DB
-        connect = DriverManager.getConnection("jdbc:mysql://localhost/notFile?"
-                + "user=root&password=admin");
     }
 
-    public void addTorrent(TorrentRecordMessage trm) throws SQLException {
+    @Override
+    public void addTorrent(TorrentRecordMessage trm) {
         try (PreparedStatement preparedStatement =
                  connect.prepareStatement("insert into  notFile.torrents values (default, ?, ?, ?, ? , ?, ?)")) {
             // Parameters start with 1
@@ -31,10 +38,13 @@ public class MySQLAccess {
             preparedStatement.setString(5, trm.getMetaData().getOwnerID());
             preparedStatement.setBlob(6, new SerialBlob(trm.getTorrentFileData()));
             preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 
-    public TorrentRecordMessage getTorrent(int id) throws SQLException {
+    @Override
+    public TorrentRecordMessage getTorrent(int id){
         // Result set get the result of the SQL query
         try (PreparedStatement preparedStatement = connect.prepareStatement("select * from notFile.torrents where id = ?")) {
             // Parameters start with 1
@@ -50,36 +60,39 @@ public class MySQLAccess {
                         resultSet.getBytes("data"));
                 }
             }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
         return null;
     }
 
-    public void readDataBase() throws Exception {
-        try (// Statements allow to issue SQL queries to the database
-             Statement statement = connect.createStatement();
-             // Result set get the result of the SQL query
-             ResultSet resultSet = statement.executeQuery("select * from notFile.torrents")) {
-            writeMetaData(resultSet);
-            writeResultSet(resultSet);
-        }
-    }
-
-    public List<MetaData> searchInDatabase(List<Attribute> attributes) throws SQLException {
+    @Override
+    public SearchResponseTorrentMessage searchTorrents(List<Attribute> attributes) {
         StringBuilder queryBuilder = new StringBuilder();
-        for (Attribute attribute : attributes) {
+        Iterator <Attribute> iterator = attributes.iterator();
+
+        if(iterator.hasNext()){
+            queryBuilder.append(" WHERE " );
+        }
+        while(iterator.hasNext()){
+            Attribute attribute = iterator.next();
             queryBuilder.append(attribute.getName()).append(" ")
-                .append(Attribute.relationToOperator.get(attribute.getRelation())).append(" ")
-                .append(attribute.getValue())
-                .append(" AND ");
+                    .append(Attribute.relationToOperator.get(attribute.getRelation())).append(" ");
+            if (attribute.getType().equals("String")){
+                queryBuilder.append("'"+attribute.getValue()+"'");
+            }else{
+                queryBuilder.append(attribute.getValue());
+            }
+            if (iterator.hasNext())
+                queryBuilder.append(" AND ");
         }
+
         String condition = queryBuilder.toString();
-        if (condition.endsWith("AND ")) {
-            condition = condition.substring(0, condition.length() - 4);
-        }
 
         List<MetaData> results = new ArrayList<>();
+        List<Integer> indexes = new ArrayList<>();
         try (Statement stmt = connect.createStatement();
-             ResultSet resultSet = stmt.executeQuery("SELECT * FROM notFile.torrents WHERE " + condition)) {
+             ResultSet resultSet = stmt.executeQuery("SELECT * FROM notFile.torrents "+ condition)) {
             while (resultSet.next()) {
                 results.add(new MetaData(
                     resultSet.getString("name"),
@@ -87,43 +100,43 @@ public class MySQLAccess {
                     resultSet.getInt("x"),
                     resultSet.getInt("y"),
                     resultSet.getLong("filesize")));
+                indexes.add(resultSet.getInt("id"));
             }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
-        return results;
+        return new SearchResponseTorrentMessage(results,indexes);
     }
 
-    private void writeMetaData(ResultSet resultSet) throws SQLException {
-        // Now get some metadata from the database
-        // Result set get the result of the SQL query
-        System.out.println("Table: " + resultSet.getMetaData().getTableName(1));
-        for (int i = 1; i <= resultSet.getMetaData().getColumnCount(); i++) {
-            System.out.println("Column " + i + " " + resultSet.getMetaData().getColumnName(i));
+    @Override
+    public SearchResponseTorrentMessage getAllTorrents() {
+        List<MetaData> results = new ArrayList<>();
+        List<Integer> indexes = new ArrayList<>();
+        try (Statement stmt = connect.createStatement();
+             ResultSet resultSet = stmt.executeQuery("SELECT * FROM notFile.torrents ")) {
+            while (resultSet.next()) {
+                results.add(new MetaData(
+                        resultSet.getString("name"),
+                        resultSet.getString("owner"),
+                        resultSet.getInt("x"),
+                        resultSet.getInt("y"),
+                        resultSet.getLong("filesize")));
+                indexes.add(resultSet.getInt("id"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
+        return new SearchResponseTorrentMessage(results,indexes);
     }
 
-    private void writeResultSet(ResultSet resultSet) throws SQLException {
-        while (resultSet.next()) {
-            String name = resultSet.getString("name");
-            int x = resultSet.getInt("x");
-            int y = resultSet.getInt("y");
-            String owner = resultSet.getString("owner");
-            Blob data = resultSet.getBlob("data");
-            System.out.println("name: " + name);
-            System.out.println("x: " + x);
-            System.out.println("y: " + y);
-            System.out.println("Owner: " + owner);
-            System.out.println("Data: " + data);
-        }
-    }
 
     public static void main(String[] args) {
         try {
-            MySQLAccess mySQLAccess = new MySQLAccess();
-
+            MySQLDatabase mySQLDatabase = new MySQLDatabase();
             MetaData metaData = new MetaData("elo.torrent", "Kuba", 0, 0, 123124);
             TorrentRecordMessage torrentRecordMessage = new TorrentRecordMessage(metaData, "Swoighwoegh".getBytes());
-            mySQLAccess.addTorrent(torrentRecordMessage);
-            mySQLAccess.getTorrent(1);
+            mySQLDatabase.addTorrent(torrentRecordMessage);
+            mySQLDatabase.getTorrent(1);
         } catch (Exception e) {
             e.printStackTrace();
         }

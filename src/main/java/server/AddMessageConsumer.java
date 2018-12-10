@@ -6,7 +6,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import data.MessageConfig;
-import data.TorrentRecordMessage;
+import data.messages.TorrentRecordMessage;
 
 import java.io.IOException;
 

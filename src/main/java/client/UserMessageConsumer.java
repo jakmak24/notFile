@@ -7,8 +7,8 @@ import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import data.MessageConfig;
 import data.MetaData;
-import data.SearchResponseTorrentMessage;
-import data.TorrentRecordMessage;
+import data.messages.SearchResponseTorrentMessage;
+import data.messages.TorrentRecordMessage;
 
 import java.io.IOException;
 
@@ -34,13 +34,16 @@ public class UserMessageConsumer extends DefaultConsumer {
                 System.out.println(" [User] GET_RESPONSE '" + torrentRecordMessage.getMetaData().getName() + "'");
                 break;
             case MessageConfig.ACTION_SEARCH:
-                SearchResponseTorrentMessage searchResponseTorrentMessage = objectMapper.readValue(body, SearchResponseTorrentMessage.class);
+                SearchResponseTorrentMessage srtm = objectMapper.readValue(body, SearchResponseTorrentMessage.class);
                 System.out.println(" [User] SEARCH_RESPONSE: '");
-                if(searchResponseTorrentMessage.getRecords().isEmpty()){
+                if(srtm.getRecordsMetadata().isEmpty()){
                     System.out.println("No results matching");
                 }
-                for(MetaData md: searchResponseTorrentMessage.getRecords()){
-                    System.out.format("|%12s|%15d|%7d|%7d|%13s|\n", md.getName(), md.getFileLength(), md.getX(),md.getY(),md.getOwnerID());
+                System.out.format("|%7s|%12s|%15s|%7s|%7s|%13s|\n","ID","NAME", "FILE SIZE", "X","Y","OWNER");
+                for(int i = 0; i<srtm.getRecordsMetadata().size();i++){
+                    int index = srtm.getRecordsIndexes().get(i);
+                    MetaData md = srtm.getRecordsMetadata().get(i);
+                    System.out.format("|%7d|%12s|%15d|%7d|%7d|%13s|\n", index, md.getName(), md.getFileLength(), md.getX(),md.getY(),md.getOwnerID());
                 }
                 break;
             default:
