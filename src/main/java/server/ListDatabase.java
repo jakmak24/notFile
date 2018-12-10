@@ -64,6 +64,9 @@ public class ListDatabase extends Database{
                 case "filesize":
                     if (!attr.match(String.valueOf(record.getFileLength()))) return false;
                     break;
+                case "public":
+                    if (!attr.match(String.valueOf(record.isAccessPublic()))) return false;
+                    break;
                 default:
                     throw new IllegalArgumentException("Unsupported attribute name: " + attr.getName());
             }

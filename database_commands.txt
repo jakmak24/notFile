@@ -8,6 +8,7 @@ CREATE TABLE torrents (
         x int,
         y int,
         owner VARCHAR(40) NOT NULL,
+        public BIT,
         data  BLOB NOT NULL,
         PRIMARY KEY (ID)
     );

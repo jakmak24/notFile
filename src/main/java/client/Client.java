@@ -38,6 +38,9 @@ public class Client {
         factory.setHost(Config.RABBIT_MQ_HOST);
 
         try {
+            System.out.println("Connecting...");
+            factory.setUsername("test");
+            factory.setPassword("test");
             connection = factory.newConnection();
             userChannel = connection.createChannel();
             groupChannel = connection.createChannel();

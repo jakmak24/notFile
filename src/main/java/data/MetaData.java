@@ -9,13 +9,19 @@ public class MetaData implements Serializable {
     private int x;
     private int y;
     private long fileLength;
+    private boolean accessPublic;
 
-    public MetaData(String name, String ownerID, int x, int y, long fileLength) {
+    public MetaData(String name, String ownerID, int x, int y, long fileLength, boolean accessPublic) {
         this.name = name;
         this.ownerID = ownerID;
         this.x = x;
         this.y = y;
         this.fileLength = fileLength;
+        this.accessPublic = accessPublic;
+    }
+
+    public MetaData(String name, String ownerID, int x, int y, long fileLength) {
+        this(name, ownerID, x, y, fileLength, true);
     }
 
     public MetaData() {}
@@ -60,12 +66,21 @@ public class MetaData implements Serializable {
         this.fileLength = fileLength;
     }
 
+    public boolean isAccessPublic() {
+        return accessPublic;
+    }
+
+    public void setAccessPublic(boolean accessPublic) {
+        this.accessPublic = accessPublic;
+    }
+
     public static final class Builder {
         private String name;
         private String ownerID;
         private int x;
         private int y;
         private long fileLength;
+        private boolean accessPublic = true;
 
         public Builder() {}
 
@@ -94,8 +109,13 @@ public class MetaData implements Serializable {
             return this;
         }
 
+        public Builder accessPublic(boolean accessPublic) {
+            this.accessPublic = accessPublic;
+            return this;
+        }
+
         public MetaData build() {
-            return new MetaData(name, ownerID, x, y, fileLength);
+            return new MetaData(name, ownerID, x, y, fileLength, accessPublic);
         }
     }
 }
