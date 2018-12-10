@@ -50,11 +50,11 @@ public class UserMessageConsumer extends DefaultConsumer {
                 if(srtm.getRecordsMetadata().isEmpty()){
                     System.out.println("No results matching");
                 }
-                System.out.format("|%7s|%12s|%15s|%7s|%7s|%13s|\n","ID","NAME", "FILE SIZE", "X","Y","OWNER");
+                System.out.format("|%7s|%12s|%15s|%7s|%7s|%6s|%13s|\n","ID","NAME", "FILE SIZE", "X","Y","ACCESS","OWNER");
                 for(int i = 0; i<srtm.getRecordsMetadata().size();i++){
                     int index = srtm.getRecordsIndexes().get(i);
                     MetaData md = srtm.getRecordsMetadata().get(i);
-                    System.out.format("|%7d|%12s|%15d|%7d|%7d|%13s|\n", index, md.getName(), md.getFileLength(), md.getX(),md.getY(),md.getOwnerID());
+                    System.out.format("|%7d|%12s|%15d|%7d|%7d|%6b|%13s|\n", index, md.getName(), md.getFileLength(), md.getX(),md.getY(),md.isAccessPublic(),md.getOwnerID());
                 }
                 break;
             case MessageConfig.ACTION_LOGIN:
@@ -62,9 +62,14 @@ public class UserMessageConsumer extends DefaultConsumer {
                 if(response.equals("OK")){
                     System.out.println("[User] LOGIN: Success");
                     client.setLogged(true);
-                }else{
-                    System.out.println("[User] LOGIN: Failure");
+                }else if (response.equals("NEW")){
+                    System.out.println("[User] LOGIN: New user created");
+                    client.setLogged(true);
+                }else if (response.equals("ACCESS_DENIED")) {
+                    System.out.println("[User] LOGIN: access denied");
+                    client.setLogged(false);
                 }
+                break;
             default:
                 System.out.println(" [User] Unknown '" + message + "'");
         }

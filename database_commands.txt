@@ -2,13 +2,21 @@ create database notFile;
 use notFile;
 
 CREATE TABLE torrents (
-        id INT NOT NULL AUTO_INCREMENT,
-        name VARCHAR(30) NOT NULL,
-	    filesize long not null,
-        x int,
-        y int,
-        owner VARCHAR(40) NOT NULL,
-        public BIT,
-        data  BLOB NOT NULL,
-        PRIMARY KEY (ID)
-    );
+id INT NOT NULL AUTO_INCREMENT,
+name VARCHAR(30) NOT NULL,
+filesize long not null,
+x int,
+y int,
+owner VARCHAR(40) NOT NULL,
+public BIT,
+data  BLOB NOT NULL,
+PRIMARY KEY (ID)
+);
+
+CREATE TABLE users (
+id INT NOT NULL AUTO_INCREMENT,
+userID VARCHAR(30) NOT NULL,
+groupID VARCHAR(30),
+password VARCHAR(30) NOT NULL,
+PRIMARY KEY (ID)
+);

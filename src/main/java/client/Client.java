@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.*;
 import data.*;
 import data.messages.GetTorrentMessage;
+import data.messages.LoginMessage;
 import data.messages.SearchQueryMessage;
 import data.messages.TorrentRecordMessage;
 
@@ -24,15 +25,15 @@ public class Client {
     private String groupQueue;
     private String userQueue;
 
-    public Boolean getLogged() {
+    public synchronized Boolean getLogged() {
         return isLogged;
     }
 
-    public void setLogged(Boolean logged) {
+    public synchronized void setLogged(Boolean logged) {
         isLogged = logged;
     }
 
-    private Boolean isLogged = false;
+    private Boolean isLogged;
 
 
     public User getUser() {
@@ -91,24 +92,41 @@ public class Client {
     }
 
 
-    public void login(String userID, String groupID){
+    public boolean login(String userID, String groupID,String password){
 
-        while(!isLogged){
+
+        AMQP.BasicProperties props = new AMQP.BasicProperties.Builder()
+                .replyTo(userQueue)
+                .contentType(MessageConfig.ACTION_LOGIN)
+                .build();
+        try {
+            String json = new ObjectMapper().writeValueAsString(new LoginMessage(userID,groupID,password));
+            sendChannel.basicPublish(MessageConfig.SERVER_EXCHANGE, MessageConfig.serverLogin, props, json.getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("LOGIN SEND");
+
+        while(getLogged() == null){
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
-
-        this.user = new User(userID,groupID);
-        try {
-            groupChannel.queueBind(groupQueue, MessageConfig.GROUP_EXCHANGE, this.user.getGroupID());
-            userChannel.queueBind(userQueue, MessageConfig.USER_EXCHANGE, this.user.getUserID());
-        } catch (IOException e) {
-            e.printStackTrace();
+        if(!getLogged()){
+            return false;
+        }else {
+            this.user = new User(userID, groupID);
+            try {
+                groupChannel.queueBind(groupQueue, MessageConfig.GROUP_EXCHANGE, this.user.getGroupID());
+                userChannel.queueBind(userQueue, MessageConfig.USER_EXCHANGE, this.user.getUserID());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return true;
         }
-
     }
 
     public void searchTorrents(List<Attribute> attributes) {

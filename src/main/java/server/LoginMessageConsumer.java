@@ -27,7 +27,7 @@ public class LoginMessageConsumer extends DefaultConsumer{
         ObjectMapper objectMapper = new ObjectMapper();
         LoginMessage loginMessage = objectMapper.readValue(body, LoginMessage.class);
 
-        String response = "OK";
+        String response =server.getDatabase().login(loginMessage);
         String json = objectMapper.writeValueAsString(response);
         AMQP.BasicProperties props = new AMQP.BasicProperties.Builder().contentType(MessageConfig.ACTION_LOGIN).build();
 

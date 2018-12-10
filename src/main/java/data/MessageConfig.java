@@ -5,6 +5,7 @@ public class MessageConfig {
     public static final String serverGet = "serverGet";
     public static final String serverAdd = "serverAdd";
     public static final String serverSearch = "serverSearch";
+    public static final String serverLogin= "serverLogin";
     public static final String SERVER_EXCHANGE = "server";
     public static final String USER_EXCHANGE = "user";
     public static final String GROUP_EXCHANGE = "group";

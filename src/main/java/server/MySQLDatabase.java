@@ -2,6 +2,7 @@ package server;
 
 import data.Attribute;
 import data.MetaData;
+import data.messages.LoginMessage;
 import data.messages.SearchResponseTorrentMessage;
 import data.messages.TorrentRecordMessage;
 
@@ -27,6 +28,37 @@ public class MySQLDatabase extends Database{
     }
 
     @Override
+    public String login(LoginMessage loginMessage) {
+        try (PreparedStatement preparedStatement = connect.prepareStatement("SELECT password , groupID FROM notFile.users WHERE userID = ? ")){
+                preparedStatement.setString(1, loginMessage.getUserID());
+
+                try(ResultSet resultSet = preparedStatement.executeQuery()) {
+                    if (resultSet.next()) {
+                        if (resultSet.getString("password").equals(loginMessage.getPassword()) &&
+                                resultSet.getString("groupID").equals(loginMessage.getGroupID())) {
+                            return "OK";
+                        } else {
+                            return "ACCESS_DENIED";
+                        }
+                    } else {
+                        try (PreparedStatement preparedStatement2 = connect.prepareStatement("insert into  notFile.users values (default, ?, ?, ?)")) {
+                            // Parameters start with 1
+                            preparedStatement2.setString(1, loginMessage.getUserID());
+                            preparedStatement2.setString(2, loginMessage.getGroupID());
+                            preparedStatement2.setString(3, loginMessage.getPassword());
+                            preparedStatement2.executeUpdate();
+                            return "NEW";
+                        }
+                    }
+                }
+
+        }catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Override
     public void addTorrent(TorrentRecordMessage trm) {
         try (PreparedStatement preparedStatement =
                  connect.prepareStatement("insert into  notFile.torrents values (default, ?, ?, ?, ? , ?, ?, ?)")) {
@@ -48,7 +80,6 @@ public class MySQLDatabase extends Database{
     public TorrentRecordMessage getTorrent(int id){
         // Result set get the result of the SQL query
         try (PreparedStatement preparedStatement = connect.prepareStatement("select * from notFile.torrents where id = ?")) {
-            // Parameters start with 1
             preparedStatement.setInt(1, id);
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 if (resultSet.next()) {
@@ -131,18 +162,5 @@ public class MySQLDatabase extends Database{
             e.printStackTrace();
         }
         return new SearchResponseTorrentMessage(results,indexes);
-    }
-
-
-    public static void main(String[] args) {
-        try {
-            MySQLDatabase mySQLDatabase = new MySQLDatabase();
-            MetaData metaData = new MetaData("elo.torrent", "Kuba", 0, 0, 123124);
-            TorrentRecordMessage torrentRecordMessage = new TorrentRecordMessage(metaData, "Swoighwoegh".getBytes());
-            mySQLDatabase.addTorrent(torrentRecordMessage);
-            mySQLDatabase.getTorrent(1);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 }

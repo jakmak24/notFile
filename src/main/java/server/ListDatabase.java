@@ -2,6 +2,7 @@ package server;
 
 import data.Attribute;
 import data.MetaData;
+import data.messages.LoginMessage;
 import data.messages.SearchResponseTorrentMessage;
 import data.messages.TorrentRecordMessage;
 
@@ -12,6 +13,12 @@ import java.util.List;
 public class ListDatabase extends Database{
 
     List<TorrentRecordMessage> torrentTable = new ArrayList<>();
+
+    @Override
+    public String login(LoginMessage loginMessage) {
+        return "OK";
+    }
+
 
     public void addTorrent(TorrentRecordMessage torrentRecordMessage) {
         torrentTable.add(torrentRecordMessage);
