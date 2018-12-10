@@ -7,6 +7,7 @@ import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import data.MessageConfig;
 import data.MetaData;
+import data.messages.AccessRequestMessage;
 import data.messages.SearchResponseTorrentMessage;
 import data.messages.TorrentRecordMessage;
 
@@ -28,6 +29,16 @@ public class UserMessageConsumer extends DefaultConsumer {
         switch (properties.getContentType()) {
             case MessageConfig.ACTION_ADD:
                 System.out.println(" [User] ADD_RESPONSE '" + message + "'");
+                break;
+            case MessageConfig.ACTION_INFO:
+                System.out.println(" [User] INFO: '" + message + "'");
+                break;
+            case MessageConfig.ACTION_ACCESS:
+                AccessRequestMessage msg = objectMapper.readValue(body, AccessRequestMessage.class);
+                System.out.println(" [User] ACCESS REQUESTED: 'User " + msg.getUserId()
+                    + " requested access to dataset " + msg.getId() + "'");
+                // TODO: Handle accepting/rejecting.
+                // client.askForPermission();
                 break;
             case MessageConfig.ACTION_GET:
                 TorrentRecordMessage torrentRecordMessage = objectMapper.readValue(body,TorrentRecordMessage.class);

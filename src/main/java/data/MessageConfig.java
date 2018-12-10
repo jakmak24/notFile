@@ -13,4 +13,6 @@ public class MessageConfig {
     public static final String ACTION_ADD = "ACTION_ADD";
     public static final String ACTION_SEARCH = "ACTION_SEARCH";
     public static final String ACTION_TORRENT_DOWNLOADED = "ACTION_TORRENT_DOWNLOADED";
+    public static final String ACTION_INFO = "ACTION_INFO";
+    public static final String ACTION_ACCESS = "ACTION_ACCESS";
 }
