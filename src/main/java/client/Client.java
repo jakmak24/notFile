@@ -24,6 +24,16 @@ public class Client {
     private String groupQueue;
     private String userQueue;
 
+    public Boolean getLogged() {
+        return isLogged;
+    }
+
+    public void setLogged(Boolean logged) {
+        isLogged = logged;
+    }
+
+    private Boolean isLogged = false;
+
 
     public User getUser() {
         return user;
@@ -83,7 +93,14 @@ public class Client {
 
     public void login(String userID, String groupID){
 
-        
+        while(!isLogged){
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
         this.user = new User(userID,groupID);
         try {
             groupChannel.queueBind(groupQueue, MessageConfig.GROUP_EXCHANGE, this.user.getGroupID());

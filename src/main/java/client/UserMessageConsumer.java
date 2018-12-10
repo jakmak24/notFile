@@ -57,6 +57,14 @@ public class UserMessageConsumer extends DefaultConsumer {
                     System.out.format("|%7d|%12s|%15d|%7d|%7d|%13s|\n", index, md.getName(), md.getFileLength(), md.getX(),md.getY(),md.getOwnerID());
                 }
                 break;
+            case MessageConfig.ACTION_LOGIN:
+                String response = objectMapper.readValue(body,String.class);
+                if(response.equals("OK")){
+                    System.out.println("[User] LOGIN: Success");
+                    client.setLogged(true);
+                }else{
+                    System.out.println("[User] LOGIN: Failure");
+                }
             default:
                 System.out.println(" [User] Unknown '" + message + "'");
         }
