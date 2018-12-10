@@ -5,6 +5,7 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
+import data.messages.AccessRequestMessage;
 import data.messages.GetTorrentMessage;
 import data.MessageConfig;
 import data.messages.TorrentRecordMessage;
@@ -30,11 +31,20 @@ public class GetMessageConsumer extends DefaultConsumer {
         if (requestedTorrent.getMetaData().isAccessPublic()) {
             String json = objectMapper.writeValueAsString(requestedTorrent);
             AMQP.BasicProperties props = new AMQP.BasicProperties.Builder().contentType(MessageConfig.ACTION_GET).build();
-            server.getChannelResponse().basicPublish(MessageConfig.USER_EXCHANGE,properties.getReplyTo(),props,
+            server.getChannelResponse().basicPublish(MessageConfig.USER_EXCHANGE, properties.getReplyTo(), props,
                 json.getBytes());
         } else {
             // respond with "access request sent"
+            AMQP.BasicProperties props = new AMQP.BasicProperties.Builder().contentType(MessageConfig.ACTION_INFO).build();
+            String message = "Sent Access Request for dataset: " + getTorrentMessage.getId();
+            server.getChannelResponse().basicPublish(
+                MessageConfig.USER_EXCHANGE, properties.getReplyTo(), props, message.getBytes());
+
             // send to owner "access_request"
+            props = new AMQP.BasicProperties.Builder().contentType(MessageConfig.ACTION_ACCESS).build();
+            AccessRequestMessage msg = new AccessRequestMessage(getTorrentMessage.getId(), properties.getReplyTo());
+            server.getChannelResponse().basicPublish(
+                MessageConfig.USER_EXCHANGE, properties.getReplyTo(), props, objectMapper.writeValueAsBytes(msg));
         }
     }
 }
