@@ -29,14 +29,15 @@ public class MySQLDatabase extends Database{
     @Override
     public void addTorrent(TorrentRecordMessage trm) {
         try (PreparedStatement preparedStatement =
-                 connect.prepareStatement("insert into  notFile.torrents values (default, ?, ?, ?, ? , ?, ?)")) {
+                 connect.prepareStatement("insert into  notFile.torrents values (default, ?, ?, ?, ? , ?, ?, ?)")) {
             // Parameters start with 1
             preparedStatement.setString(1, trm.getMetaData().getName());
             preparedStatement.setLong(2, trm.getMetaData().getFileLength());
             preparedStatement.setInt(3, trm.getMetaData().getX());
             preparedStatement.setInt(4, trm.getMetaData().getY());
             preparedStatement.setString(5, trm.getMetaData().getOwnerID());
-            preparedStatement.setBlob(6, new SerialBlob(trm.getTorrentFileData()));
+            preparedStatement.setBoolean(6, trm.getMetaData().isAccessPublic());
+            preparedStatement.setBlob(7, new SerialBlob(trm.getTorrentFileData()));
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -56,7 +57,8 @@ public class MySQLDatabase extends Database{
                             resultSet.getString("owner"),
                             resultSet.getInt("x"),
                             resultSet.getInt("y"),
-                            resultSet.getLong("filesize")),
+                            resultSet.getLong("filesize"),
+                            resultSet.getBoolean("public")),
                         resultSet.getBytes("data"));
                 }
             }
@@ -99,7 +101,8 @@ public class MySQLDatabase extends Database{
                     resultSet.getString("owner"),
                     resultSet.getInt("x"),
                     resultSet.getInt("y"),
-                    resultSet.getLong("filesize")));
+                    resultSet.getLong("filesize"),
+                    resultSet.getBoolean("public")));
                 indexes.add(resultSet.getInt("id"));
             }
         } catch (SQLException e) {
@@ -120,7 +123,8 @@ public class MySQLDatabase extends Database{
                         resultSet.getString("owner"),
                         resultSet.getInt("x"),
                         resultSet.getInt("y"),
-                        resultSet.getLong("filesize")));
+                        resultSet.getLong("filesize"),
+                        resultSet.getBoolean("public")));
                 indexes.add(resultSet.getInt("id"));
             }
         } catch (SQLException e) {

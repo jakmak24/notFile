@@ -107,6 +107,8 @@ public class Attribute implements Serializable {
                 return  new Attribute(parts[0], relation, parts[1].trim(),"String");
             case "filesize":
                 return new Attribute(parts[0], relation, (parts[1]).trim(),"Long");
+            case "public":
+                return new Attribute(parts[0], relation, (parts[1]).trim(),"Boolean");
             default:
                 throw new IllegalArgumentException("Unsupported argument: " + parts[0]);
         }
@@ -131,6 +133,9 @@ public class Attribute implements Serializable {
                 case "filesize":
                     builder.fileLength(Long.parseLong(attr.getValue()));
                     break;
+                case "public":
+                    builder.accessPublic(Boolean.parseBoolean(attr.getValue()));
+                    break;
                 default:
                     throw new IllegalArgumentException("Unsupported attribute name: " + attr.getName());
             }
@@ -154,6 +159,9 @@ public class Attribute implements Serializable {
                 v= Long.parseLong(value);
                 oV=Long.parseLong(otherValue);
                 break;
+            case "Boolean":
+                v = Boolean.parseBoolean(value);
+                oV = Boolean.parseBoolean(otherValue);
             case "String":
                 v =value;
                 oV = otherValue;
