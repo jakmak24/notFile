@@ -29,7 +29,7 @@ public class ClientMain {
         Client client = new Client();
         client.openConnection();
 
-        client.login(new User(userID, groupID));
+        client.login(userID, groupID);
 
         System.out.println("COMMANDLINE:");
         while (true) {

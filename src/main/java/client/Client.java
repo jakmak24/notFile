@@ -78,14 +78,17 @@ public class Client {
     }
 
 
-    public void login(User user){
-        this.user = user;
+    public void login(String userID, String groupID){
+
+        
+        this.user = new User(userID,groupID);
         try {
-            groupChannel.queueBind(groupQueue, MessageConfig.GROUP_EXCHANGE, user.getGroupID());
-            userChannel.queueBind(userQueue, MessageConfig.USER_EXCHANGE, user.getUserID());
+            groupChannel.queueBind(groupQueue, MessageConfig.GROUP_EXCHANGE, this.user.getGroupID());
+            userChannel.queueBind(userQueue, MessageConfig.USER_EXCHANGE, this.user.getUserID());
         } catch (IOException e) {
             e.printStackTrace();
         }
+
     }
 
     public void searchTorrents(List<Attribute> attributes) {
