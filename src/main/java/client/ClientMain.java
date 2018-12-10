@@ -26,8 +26,10 @@ public class ClientMain {
             groupID = scan.nextLine();
         }
 
-        Client client = new Client(new User(userID, groupID));
+        Client client = new Client();
         client.openConnection();
+
+        client.login(new User(userID, groupID));
 
         System.out.println("COMMANDLINE:");
         while (true) {

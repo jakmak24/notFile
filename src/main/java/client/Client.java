@@ -24,9 +24,6 @@ public class Client {
     private String groupQueue;
     private String userQueue;
 
-    public Client(User user) {
-        this.user = user;
-    }
 
     public User getUser() {
         return user;
@@ -48,11 +45,10 @@ public class Client {
 
             userQueue = userChannel.queueDeclare().getQueue();
             userChannel.exchangeDeclare(MessageConfig.USER_EXCHANGE, BuiltinExchangeType.DIRECT);
-            userChannel.queueBind(userQueue, MessageConfig.USER_EXCHANGE, user.getUserID());
 
             groupQueue = groupChannel.queueDeclare().getQueue();
             groupChannel.exchangeDeclare(MessageConfig.GROUP_EXCHANGE, BuiltinExchangeType.DIRECT);
-            groupChannel.queueBind(groupQueue, MessageConfig.GROUP_EXCHANGE, user.getGroupID());
+
 
             startConsumers();
 
@@ -81,6 +77,17 @@ public class Client {
         }).start();
     }
 
+
+    public void login(User user){
+        this.user = user;
+        try {
+            groupChannel.queueBind(groupQueue, MessageConfig.GROUP_EXCHANGE, user.getGroupID());
+            userChannel.queueBind(userQueue, MessageConfig.USER_EXCHANGE, user.getUserID());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void searchTorrents(List<Attribute> attributes) {
         AMQP.BasicProperties props = new AMQP.BasicProperties.Builder()
             .replyTo(user.getUserID())
@@ -102,8 +109,8 @@ public class Client {
     public void addTorrent(String torrent, List<Attribute> attributes) {
         File f = new File(torrent);
         long size = f.length();
-        attributes.add(Attribute.parse("filesize = " + size));
-        attributes.add(Attribute.parse("owner = " + user.getUserID()));
+        attributes.add(new Attribute("filesize", Attribute.Relation.EQ,String.valueOf(size),"Long"));
+        attributes.add(new Attribute("owner", Attribute.Relation.EQ,user.getUserID(),"String"));
         // TODO: Add anything else that's needed.
         MetaData metaData = Attribute.convertToMetaData(attributes);
 

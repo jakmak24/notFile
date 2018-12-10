@@ -1,5 +1,7 @@
 package data;
 
+import com.sun.org.apache.regexp.internal.RE;
+
 import java.io.Serializable;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.List;
@@ -61,26 +63,50 @@ public class Attribute implements Serializable {
         this.type = type;
     }
 
-    public static Attribute parse(String attr) {
-        String[] parts = attr.split("\\s+");
-        if (parts.length != 3) {
+    public static Attribute parse (String attr) {
+
+        Relation relation = null;
+        String splitter = null;
+        if(attr.contains("<=")) {
+            relation = Relation.LTE;
+            splitter = "<=";
+        }else if(attr.contains(">=")){
+            relation = Relation.GTE;
+            splitter = ">=";
+        }else if(attr.contains("!=")){
+           relation =   Relation.NEQ;
+            splitter = "!=";
+        }else if (attr.contains("=")){
+            relation = Relation.EQ;
+            splitter = "=";
+        }else if (attr.contains("<")){
+            relation = Relation.LT;
+            splitter = "<";
+        }else if (attr.contains(">")){
+            relation = Relation.GT;
+            splitter = ">";
+        }
+
+        if (relation == null) {
+            throw new IllegalArgumentException("Unsupported relation: ");
+        }
+        String[] parts = attr.split(splitter);
+
+        if (parts.length != 2) {
             throw new IllegalArgumentException("Invalid input for Attribute: " + attr);
         }
-        Relation relation = supportedRelations.get(parts[1]);
-        if (relation == null) {
-            throw new IllegalArgumentException("Unsupported relation: " + parts[1]);
-        }
+
         switch (parts[0].trim()){
             case "name":
-                return new Attribute(parts[0], relation, parts[2],"String");
+                return new Attribute(parts[0], relation, parts[1].trim(),"String");
             case "x":
-                return  new Attribute(parts[0], relation, (parts[2]),"Integer");
+                return  new Attribute(parts[0], relation, (parts[1]).trim(),"Integer");
             case "y":
-                return  new Attribute(parts[0], relation, (parts[2]),"Integer");
+                return  new Attribute(parts[0], relation, (parts[1]).trim(),"Integer");
             case "owner":
-                return  new Attribute(parts[0], relation, parts[2],"String");
+                return  new Attribute(parts[0], relation, parts[1].trim(),"String");
             case "filesize":
-                return new Attribute(parts[0], relation, (parts[2]),"Long");
+                return new Attribute(parts[0], relation, (parts[1]).trim(),"Long");
             default:
                 throw new IllegalArgumentException("Unsupported argument: " + parts[0]);
         }
