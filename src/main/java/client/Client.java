@@ -3,15 +3,13 @@ package client;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.*;
 import data.*;
-import data.messages.GetTorrentMessage;
-import data.messages.LoginMessage;
-import data.messages.SearchQueryMessage;
-import data.messages.TorrentRecordMessage;
+import data.messages.*;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.TimeoutException;
 
 public class Client {
@@ -151,7 +149,10 @@ public class Client {
         File f = new File(torrent);
         long size = f.length();
         attributes.add(new Attribute("filesize", Attribute.Relation.EQ,String.valueOf(size),"Long"));
-        attributes.add(new Attribute("owner", Attribute.Relation.EQ,user.getUserID(),"String"));
+        attributes.add(new Attribute("owner", Attribute.Relation.EQ, user.getUserID(),"String"));
+        if (attributes.stream().noneMatch(a -> a.getName().equals("name"))) {
+            attributes.add(new Attribute("name", Attribute.Relation.EQ, f.getName(),"String"));
+        }
         // TODO: Add anything else that's needed.
         MetaData metaData = Attribute.convertToMetaData(attributes);
 
@@ -192,7 +193,7 @@ public class Client {
                 .contentType(MessageConfig.ACTION_TORRENT_DOWNLOADED)
                 .build();
             try {
-                sendChannel.basicPublish(MessageConfig.GROUP_EXCHANGE, user.getGroupID(), props, ("Downloaded" + torrentPath).getBytes());
+                sendChannel.basicPublish(MessageConfig.GROUP_EXCHANGE, user.getGroupID(), props, ("Downloaded " + torrentPath).getBytes());
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -214,5 +215,30 @@ public class Client {
             e.printStackTrace();
         }
 
+    }
+
+    public void handleAccessRequest(String userId, int fileId) {
+        System.out.println(" [User] ACCESS REQUEST: User " + userId + " requested access to the dataset (id: " + fileId + "). Accept? [y/N]");
+        // TODO: handle response properly. For now 66% probability of accepting.
+        if (new Random().nextInt(3) < 2) {
+            System.out.println("        -> Accepting.");
+            this.accessRequestRespond(userId, fileId, MessageConfig.ACTION_ACCESS_REQUEST_ACCEPT);
+        } else {
+            System.out.println("        -> Rejecting.");
+            this.accessRequestRespond(userId, fileId, MessageConfig.ACTION_ACCESS_REQUEST_REJECT);
+        }
+    }
+
+    private void accessRequestRespond(String userId, int fileId, String response) {
+        AMQP.BasicProperties props = new AMQP.BasicProperties.Builder()
+            .replyTo(userId)
+            .contentType(response)
+            .build();
+        try {
+            sendChannel.basicPublish(MessageConfig.SERVER_EXCHANGE, MessageConfig.serverAccess, props,
+                String.valueOf(fileId).getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

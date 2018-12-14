@@ -98,17 +98,17 @@ public class Attribute implements Serializable {
 
         switch (parts[0].trim()){
             case "name":
-                return new Attribute(parts[0], relation, parts[1].trim(),"String");
+                return new Attribute(parts[0].trim(), relation, parts[1].trim(),"String");
             case "x":
-                return  new Attribute(parts[0], relation, (parts[1]).trim(),"Integer");
+                return  new Attribute(parts[0].trim(), relation, parts[1].trim(),"Integer");
             case "y":
-                return  new Attribute(parts[0], relation, (parts[1]).trim(),"Integer");
+                return  new Attribute(parts[0].trim(), relation, parts[1].trim(),"Integer");
             case "owner":
-                return  new Attribute(parts[0], relation, parts[1].trim(),"String");
+                return  new Attribute(parts[0].trim(), relation, parts[1].trim(),"String");
             case "filesize":
-                return new Attribute(parts[0], relation, (parts[1]).trim(),"Long");
+                return new Attribute(parts[0].trim(), relation, parts[1].trim(),"Long");
             case "public":
-                return new Attribute(parts[0], relation, (parts[1]).trim(),"Boolean");
+                return new Attribute(parts[0].trim(), relation, parts[1].trim(),"Boolean");
             default:
                 throw new IllegalArgumentException("Unsupported argument: " + parts[0]);
         }

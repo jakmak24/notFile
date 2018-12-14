@@ -11,6 +11,7 @@ import data.messages.AccessRequestMessage;
 import data.messages.SearchResponseTorrentMessage;
 import data.messages.TorrentRecordMessage;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 public class UserMessageConsumer extends DefaultConsumer {
@@ -38,11 +39,16 @@ public class UserMessageConsumer extends DefaultConsumer {
                 System.out.println(" [User] ACCESS REQUESTED: 'User " + msg.getUserId()
                     + " requested access to dataset " + msg.getId() + "'");
                 // TODO: Handle accepting/rejecting.
-                // client.askForPermission();
+                client.handleAccessRequest(msg.getUserId(), msg.getId());
                 break;
             case MessageConfig.ACTION_GET:
                 TorrentRecordMessage torrentRecordMessage = objectMapper.readValue(body,TorrentRecordMessage.class);
                 System.out.println(" [User] GET_RESPONSE '" + torrentRecordMessage.getMetaData().getName() + "'");
+                String filePath = "./torrents/" + torrentRecordMessage.getMetaData().getName() + ".torrent";
+                try (FileOutputStream stream = new FileOutputStream(filePath)) {
+                    stream.write(torrentRecordMessage.getTorrentFileData());
+                    System.out.println(" [User] Saved torrent file in: " + filePath);
+                }
                 break;
             case MessageConfig.ACTION_SEARCH:
                 SearchResponseTorrentMessage srtm = objectMapper.readValue(body, SearchResponseTorrentMessage.class);

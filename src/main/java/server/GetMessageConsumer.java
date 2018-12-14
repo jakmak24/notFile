@@ -44,7 +44,7 @@ public class GetMessageConsumer extends DefaultConsumer {
             props = new AMQP.BasicProperties.Builder().contentType(MessageConfig.ACTION_ACCESS).build();
             AccessRequestMessage msg = new AccessRequestMessage(getTorrentMessage.getId(), properties.getReplyTo());
             server.getChannelResponse().basicPublish(
-                MessageConfig.USER_EXCHANGE, properties.getReplyTo(), props, objectMapper.writeValueAsBytes(msg));
+                MessageConfig.USER_EXCHANGE, requestedTorrent.getMetaData().getOwnerID(), props, objectMapper.writeValueAsBytes(msg));
         }
     }
 }

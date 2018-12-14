@@ -32,6 +32,7 @@ public class ClientMain {
         if(client.login(userID, groupID,"pass")){
 
             System.out.println("COMMANDLINE:");
+            printHelp();
             while (true) {
                 String line = scan.nextLine();
                 String[] s = line.split("\\s+");
