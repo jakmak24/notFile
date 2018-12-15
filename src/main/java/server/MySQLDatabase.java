@@ -29,13 +29,13 @@ public class MySQLDatabase extends Database{
 
     @Override
     public String login(LoginMessage loginMessage) {
-        try (PreparedStatement preparedStatement = connect.prepareStatement("SELECT password , groupID FROM notFile.users WHERE userID = ? ")){
-                preparedStatement.setString(1, loginMessage.getUserID());
+        try (PreparedStatement preparedStatement = connect.prepareStatement("SELECT password , groupID FROM notFile.users WHERE groupID = ? AND userID = ? ")){
+                preparedStatement.setString(1, loginMessage.getGroupName());
+                preparedStatement.setString(2, loginMessage.getUserName());
 
                 try(ResultSet resultSet = preparedStatement.executeQuery()) {
                     if (resultSet.next()) {
-                        if (resultSet.getString("password").equals(loginMessage.getPassword()) &&
-                                resultSet.getString("groupID").equals(loginMessage.getGroupID())) {
+                        if (resultSet.getString("password").equals(loginMessage.getPassword())){
                             return "OK";
                         } else {
                             return "ACCESS_DENIED";
@@ -43,8 +43,8 @@ public class MySQLDatabase extends Database{
                     } else {
                         try (PreparedStatement preparedStatement2 = connect.prepareStatement("insert into  notFile.users values (default, ?, ?, ?)")) {
                             // Parameters start with 1
-                            preparedStatement2.setString(1, loginMessage.getUserID());
-                            preparedStatement2.setString(2, loginMessage.getGroupID());
+                            preparedStatement2.setString(1, loginMessage.getUserName());
+                            preparedStatement2.setString(2, loginMessage.getGroupName());
                             preparedStatement2.setString(3, loginMessage.getPassword());
                             preparedStatement2.executeUpdate();
                             return "NEW";

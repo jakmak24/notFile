@@ -6,20 +6,20 @@ public class LoginMessage implements Serializable{
 
 
     public LoginMessage(){}
-    public String getUserID() {
-        return userID;
+    public String getUserName() {
+        return userName;
     }
 
-    public void setUserID(String userID) {
-        this.userID = userID;
+    public void setUserName(String userName) {
+        this.userName = userName;
     }
 
-    public String getGroupID() {
-        return groupID;
+    public String getGroupName() {
+        return groupName;
     }
 
-    public void setGroupID(String groupID) {
-        this.groupID = groupID;
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
     }
 
     public String getPassword() {
@@ -30,14 +30,14 @@ public class LoginMessage implements Serializable{
         this.password = password;
     }
 
-    public LoginMessage(String userID, String groupID, String password) {
-        this.userID = userID;
-        this.groupID = groupID;
+    public LoginMessage(String userName, String groupName, String password) {
+        this.userName = userName;
+        this.groupName = groupName;
         this.password = password;
     }
 
-    private String userID;
-    private String groupID;
+    private String userName;
+    private String groupName;
     private String password;
 
 }

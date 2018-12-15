@@ -8,7 +8,9 @@ import data.messages.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.TimeoutException;
 
 public class Client {
@@ -21,6 +23,7 @@ public class Client {
     private User user;
     private String groupQueue;
     private String userQueue;
+    private List<AccessRequestMessage> accessReguests = new ArrayList<>();
 
     public synchronized Boolean getLogged() {
         return isLogged;
@@ -51,34 +54,22 @@ public class Client {
             factory.setPassword("test");
             connection = factory.newConnection();
             userChannel = connection.createChannel();
-            groupChannel = connection.createChannel();
             sendChannel = connection.createChannel();
 
             userQueue = userChannel.queueDeclare().getQueue();
             userChannel.exchangeDeclare(MessageConfig.USER_EXCHANGE, BuiltinExchangeType.DIRECT);
 
-            groupQueue = groupChannel.queueDeclare().getQueue();
-            groupChannel.exchangeDeclare(MessageConfig.GROUP_EXCHANGE, BuiltinExchangeType.DIRECT);
-
-
-            startConsumers();
+            startUserConsumer();
 
         } catch (IOException | TimeoutException e) {
             e.printStackTrace();
         }
     }
 
-    public void startConsumers() {
+    public void startUserConsumer() {
         Consumer userConsumer = new UserMessageConsumer(userChannel, this);
         Consumer groupConsumer = new GroupMessageConsumer(userChannel, this);
 
-        new Thread(() -> {
-            try {
-                groupChannel.basicConsume(groupQueue, true, groupConsumer);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }).start();
         new Thread(() -> {
             try {
                 userChannel.basicConsume(userQueue, true, userConsumer);
@@ -88,16 +79,35 @@ public class Client {
         }).start();
     }
 
+    private void startGroupChannel(){
 
-    public boolean login(String userID, String groupID,String password){
+        try {
+            groupChannel = connection.createChannel();
+            groupQueue = groupChannel.queueDeclare().getQueue();
+            groupChannel.exchangeDeclare(MessageConfig.GROUP_EXCHANGE, BuiltinExchangeType.DIRECT);
+            groupChannel.queueBind(groupQueue, MessageConfig.GROUP_EXCHANGE, this.user.getGroupName());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Consumer groupConsumer = new GroupMessageConsumer(groupChannel, this);
+        new Thread(() -> {
+            try {
+                groupChannel.basicConsume(groupQueue, true, groupConsumer);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
 
+
+    public boolean login(String userName, String groupName,String password){
 
         AMQP.BasicProperties props = new AMQP.BasicProperties.Builder()
                 .replyTo(userQueue)
                 .contentType(MessageConfig.ACTION_LOGIN)
                 .build();
         try {
-            String json = new ObjectMapper().writeValueAsString(new LoginMessage(userID,groupID,password));
+            String json = new ObjectMapper().writeValueAsString(new LoginMessage(userName,groupName,password));
             sendChannel.basicPublish(MessageConfig.SERVER_EXCHANGE, MessageConfig.serverLogin, props, json.getBytes());
         } catch (IOException e) {
             e.printStackTrace();
@@ -115,10 +125,12 @@ public class Client {
         if(!getLogged()){
             return false;
         }else {
-            this.user = new User(userID, groupID);
+            this.user = new User(userName, groupName);
             try {
-                groupChannel.queueBind(groupQueue, MessageConfig.GROUP_EXCHANGE, this.user.getGroupID());
                 userChannel.queueBind(userQueue, MessageConfig.USER_EXCHANGE, this.user.getUserID());
+                if(!groupName.equals("no_group")){
+                    startGroupChannel();
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -192,7 +204,7 @@ public class Client {
                 .contentType(MessageConfig.ACTION_TORRENT_DOWNLOADED)
                 .build();
             try {
-                sendChannel.basicPublish(MessageConfig.GROUP_EXCHANGE, user.getGroupID(), props, ("Downloaded " + torrentPath).getBytes());
+                sendChannel.basicPublish(MessageConfig.GROUP_EXCHANGE,user.getGroupName(), props, ("Downloaded " + torrentPath).getBytes());
             } catch (IOException e) {
                 e.printStackTrace();
             }
