@@ -2,6 +2,7 @@ package client;
 
 import java.io.IOException;
 
+
 public class WebtorrentWrapper {
 
     private String webtorrentPath;
@@ -30,7 +31,9 @@ public class WebtorrentWrapper {
                     " create "+pathToFile+
                     " --announce "+announce+
                     " --out "+outPath+"/"+torrentName+".torrent");
+
             exec.waitFor();
+
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
@@ -38,16 +41,13 @@ public class WebtorrentWrapper {
         return outPath+"/"+torrentName+".torrent";
     }
 
-    public void downloadTorrent(String pathToTorrent,String outDir){
-        try {
-            Process exec = Runtime.getRuntime().exec(
+
+    public DownloadProcess downloadTorrent(String pathToTorrent, String outDir){
+
+            return  new DownloadProcess(
                     webtorrentPath +
                             " download "+ pathToTorrent +
                             " --out "+ outDir);
-            exec.waitFor();
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
     }
 
     public void seedTorrent(String pathToTorrent,String outDir){
@@ -63,5 +63,12 @@ public class WebtorrentWrapper {
             e.printStackTrace();
         }
     }
+
+
+    public static void main(String[] args) {
+        WebtorrentWrapper tw = new WebtorrentWrapper();
+        tw.downloadTorrent("./torrents/elo.torrent","./downloads");
+    }
+
 
 }

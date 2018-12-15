@@ -38,7 +38,7 @@ public class UserMessageConsumer extends DefaultConsumer {
                 AccessRequestMessage msg = objectMapper.readValue(body, AccessRequestMessage.class);
                 System.out.println(" [User] ACCESS REQUESTED: 'User " + msg.getUserId()
                     + " requested access to dataset " + msg.getId() + "'");
-                client.handleAccessRequest(msg);
+                client.handleAccessRequest(msg.getUserId(),msg.getId());
                 break;
             case MessageConfig.ACTION_GET:
                 TorrentRecordMessage torrentRecordMessage = objectMapper.readValue(body,TorrentRecordMessage.class);

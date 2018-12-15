@@ -95,6 +95,9 @@ public class ClientMain {
                     // <torrent_path>
                     client.seedTorrent(s[1]);
                     break;
+                case "status":
+                    client.status();
+                    break;
                 default:
                     printHelp();
         } }

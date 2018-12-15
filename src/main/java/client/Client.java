@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeoutException;
@@ -23,7 +24,7 @@ public class Client {
     private User user;
     private String groupQueue;
     private String userQueue;
-    private List<AccessRequestMessage> accessReguests = new ArrayList<>();
+    private List<DownloadProcess> downloadProcesses = new LinkedList<>();
 
     public synchronized Boolean getLogged() {
         return isLogged;
@@ -68,7 +69,6 @@ public class Client {
 
     public void startUserConsumer() {
         Consumer userConsumer = new UserMessageConsumer(userChannel, this);
-        Consumer groupConsumer = new GroupMessageConsumer(userChannel, this);
 
         new Thread(() -> {
             try {
@@ -198,7 +198,9 @@ public class Client {
 
     public void downloadTorrent(String torrentPath) {
         new Thread(() -> {
-            webtorrentWrapper.downloadTorrent(torrentPath, Config.DOWNLOAD_FOLDER);
+            DownloadProcess downloadProcess = webtorrentWrapper.downloadTorrent(torrentPath, Config.DOWNLOAD_FOLDER);
+            downloadProcesses.add(downloadProcess);
+            downloadProcess.start();
             AMQP.BasicProperties props = new AMQP.BasicProperties.Builder()
                 .replyTo(user.getUserID())
                 .contentType(MessageConfig.ACTION_TORRENT_DOWNLOADED)
@@ -255,5 +257,14 @@ public class Client {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void status(){
+        System.out.println("DOWNLOADING");{
+        for (DownloadProcess d:downloadProcesses){
+            System.out.println(d);
+            }
+        }
+
     }
 }
