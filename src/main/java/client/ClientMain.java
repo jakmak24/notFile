@@ -12,8 +12,8 @@ public class ClientMain {
 
     public static void main(String[] args) {
 
-        String userID = "defalutUser";
-        String groupID = "defaultGroup";
+        String userID;
+        String groupID;
 
         Client client = new Client();
         client.openConnection();
@@ -22,7 +22,7 @@ public class ClientMain {
         if (args.length ==2) {
             userID = args[0];
             groupID = args[1];
-        }else{
+        } else {
             System.out.println("Insert username:");
             userID = scan.nextLine();
             System.out.println("Insert group name:");
@@ -50,7 +50,7 @@ public class ClientMain {
                         String attributeString = line.substring("search".length()).trim();
                         if(attributeString.equals("")){
                             client.searchTorrents(new ArrayList<>());
-                        }else {
+                        } else {
                             String[] attrs = attributeString.split(",");
                             List<Attribute> attributes = Arrays.stream(attrs)
                                     .map(Attribute::parse)
@@ -59,7 +59,16 @@ public class ClientMain {
                         }
                         break;
                     case "create":
+                        // <torrent_file_name> <data_file_path>
                         System.out.println(client.createTorrent(s[1], s[2]));
+                        break;
+                    case "accept":
+                        // <user> <file_id>
+                        client.acceptAccessRequest(s[2], s[3]);
+                        break;
+                    case "reject":
+                        // <user> <file_id>
+                        client.rejectAccessRequest(s[2], s[3]);
                         break;
                     case "add":
                         // <file_name> <attributes>
@@ -72,12 +81,15 @@ public class ClientMain {
                         client.addTorrent(s[1], attributes);
                         break;
                     case "get":
+                        // <file_id>
                         client.getTorrent(s[1]);
                         break;
                     case "download":
+                        // <torrent_path>
                         client.downloadTorrent(s[1]);
                         break;
                     case "seed":
+                        // <torrent_path>
                         client.seedTorrent(s[1]);
                         break;
                     default:
