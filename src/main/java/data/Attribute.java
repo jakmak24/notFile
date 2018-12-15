@@ -1,7 +1,5 @@
 package data;
 
-import com.sun.org.apache.regexp.internal.RE;
-
 import java.io.Serializable;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.List;
@@ -33,14 +31,14 @@ public class Attribute implements Serializable {
         EQ, NEQ, LT, LTE, GT, GTE,
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     private String name;
     private Relation relation;
     private String value;
     private String type;
+
+    public void setName(String name) {
+        this.name = name;
+    }
 
     public void setType(String type) {
         this.type = type;
@@ -61,6 +59,16 @@ public class Attribute implements Serializable {
         this.relation = relation;
         this.value = value;
         this.type = type;
+    }
+
+    public static String print(List<Attribute> attrs) {
+        StringBuilder b = new StringBuilder();
+        for (Attribute attr : attrs) {
+            b.append(attr.getName()).append(" ");
+            b.append(attr.getRelation()).append(" ");
+            b.append(attr.getValue()).append(",");
+        }
+        return b.toString();
     }
 
     public static Attribute parse (String attr) {
@@ -162,8 +170,9 @@ public class Attribute implements Serializable {
             case "Boolean":
                 v = Boolean.parseBoolean(value);
                 oV = Boolean.parseBoolean(otherValue);
-            case "String":
-                v =value;
+            // case "String":
+            default:
+                v = value;
                 oV = otherValue;
         }
 
@@ -175,13 +184,17 @@ public class Attribute implements Serializable {
         }
         switch (this.relation) {
             case LT:
-                return v.compareTo(oV) < 0;
+                // this: attr < v
+                // oV matches the attr if oV < v
+                return oV.compareTo(v) < 0;
             case LTE:
-                return v.compareTo(oV) <= 0;
+                return oV.compareTo(v) <= 0;
             case GT:
-                return v.compareTo(oV) > 0;
+                // this: attr > v
+                // oV matches the attr if oV > v
+                return oV.compareTo(v) > 0;
             case GTE:
-                return v.compareTo(oV) >= 0;
+                return oV.compareTo(v) >= 0;
         }
         throw new IllegalArgumentException("Unsupported relation: " + this.relation);
     }

@@ -7,6 +7,14 @@ import java.util.List;
 
 public class SearchQueryMessage implements Serializable {
 
+    private List<Attribute> attributes;
+
+    public SearchQueryMessage(List<Attribute> attributes) {
+        this.attributes = attributes;
+    }
+
+    public SearchQueryMessage(){}
+
     public List<Attribute> getAttributes() {
         return attributes;
     }
@@ -14,14 +22,4 @@ public class SearchQueryMessage implements Serializable {
     public void setAttributes(List<Attribute> attributes) {
         this.attributes = attributes;
     }
-
-    public SearchQueryMessage(List<Attribute> attributes) {
-        this.attributes = attributes;
-    }
-
-    private List<Attribute> attributes;
-
-    public SearchQueryMessage(){}
-
-
 }

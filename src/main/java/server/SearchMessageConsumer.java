@@ -1,19 +1,17 @@
 package server;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
-import data.Attribute;
 import data.MessageConfig;
-import data.MetaData;
+import data.Subscription;
 import data.messages.SearchQueryMessage;
 import data.messages.SearchResponseTorrentMessage;
 
 import java.io.IOException;
-import java.util.List;
+import java.time.LocalDateTime;
 
 public class SearchMessageConsumer extends DefaultConsumer {
 
@@ -31,10 +29,19 @@ public class SearchMessageConsumer extends DefaultConsumer {
 
         SearchQueryMessage sqm = new ObjectMapper().readValue(message, SearchQueryMessage.class);
         SearchResponseTorrentMessage queryResult = server.getDatabase().searchTorrents(sqm.getAttributes());
-        String json = new ObjectMapper().writeValueAsString(queryResult);
 
-        AMQP.BasicProperties props = new AMQP.BasicProperties.Builder().contentType(MessageConfig.ACTION_SEARCH).build();
-        server.getChannelResponse().basicPublish(MessageConfig.USER_EXCHANGE,properties.getReplyTo(),props,
+        if (queryResult.getRecordsIndexes().size() == 0) {
+            server.getSubscriptionStorage().put(new Subscription(sqm, properties.getReplyTo(), LocalDateTime.now()));
+
+            AMQP.BasicProperties props = new AMQP.BasicProperties.Builder().contentType(MessageConfig.ACTION_INFO).build();
+            server.getChannelResponse().basicPublish(MessageConfig.USER_EXCHANGE,properties.getReplyTo(),props,
+                ("No results found for your search criteria.\nYour query was saved and you will be notified once " +
+                    "a dataset with these properties is available.").getBytes());
+        } else {
+            String json = new ObjectMapper().writeValueAsString(queryResult);
+            AMQP.BasicProperties props = new AMQP.BasicProperties.Builder().contentType(MessageConfig.ACTION_SEARCH).build();
+            server.getChannelResponse().basicPublish(MessageConfig.USER_EXCHANGE,properties.getReplyTo(),props,
                 json.getBytes());
+        }
     }
 }

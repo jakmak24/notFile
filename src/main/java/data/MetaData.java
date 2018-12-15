@@ -1,6 +1,7 @@
 package data;
 
 import java.io.Serializable;
+import java.util.List;
 
 public class MetaData implements Serializable {
 
@@ -72,6 +73,34 @@ public class MetaData implements Serializable {
 
     public void setAccessPublic(boolean accessPublic) {
         this.accessPublic = accessPublic;
+    }
+
+    public boolean matchAttributes(List<Attribute> attributes) {
+        for (Attribute attr : attributes) {
+            switch (attr.getName()) {
+                case "name":
+                    if (!attr.match(this.getName())) return false;
+                    break;
+                case "owner":
+                    if (!attr.match(this.getOwnerID())) return false;
+                    break;
+                case "x":
+                    if (!attr.match(String.valueOf(this.getX()))) return false;
+                    break;
+                case "y":
+                    if (!attr.match(String.valueOf(this.getY()))) return false;
+                    break;
+                case "filesize":
+                    if (!attr.match(String.valueOf(this.getFileLength()))) return false;
+                    break;
+                case "public":
+                    if (!attr.match(String.valueOf(this.isAccessPublic()))) return false;
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unsupported attribute name: " + attr.getName());
+            }
+        }
+        return true;
     }
 
     public static final class Builder {

@@ -59,9 +59,10 @@ public class MySQLDatabase extends Database{
     }
 
     @Override
-    public void addTorrent(TorrentRecordMessage trm) {
+    public int addTorrent(TorrentRecordMessage trm) {
         try (PreparedStatement preparedStatement =
-                 connect.prepareStatement("insert into  notFile.torrents values (default, ?, ?, ?, ? , ?, ?, ?)")) {
+                 connect.prepareStatement("insert into  notFile.torrents values (default, ?, ?, ?, ? , ?, ?, ?)",
+                     Statement.RETURN_GENERATED_KEYS)) {
             // Parameters start with 1
             preparedStatement.setString(1, trm.getMetaData().getName());
             preparedStatement.setLong(2, trm.getMetaData().getFileLength());
@@ -71,9 +72,16 @@ public class MySQLDatabase extends Database{
             preparedStatement.setBoolean(6, trm.getMetaData().isAccessPublic());
             preparedStatement.setBlob(7, new SerialBlob(trm.getTorrentFileData()));
             preparedStatement.executeUpdate();
+
+            try (ResultSet rs = preparedStatement.getGeneratedKeys()) {
+                if (rs.next()){
+                    return rs.getInt(1);
+                }
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        return -1;
     }
 
     @Override

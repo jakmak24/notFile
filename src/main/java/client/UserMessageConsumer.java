@@ -5,18 +5,24 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
+import data.Attribute;
 import data.MessageConfig;
 import data.MetaData;
 import data.messages.AccessRequestMessage;
 import data.messages.SearchResponseTorrentMessage;
+import data.messages.SubscriptionMatchMessage;
 import data.messages.TorrentRecordMessage;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.time.format.DateTimeFormatter;
 
 public class UserMessageConsumer extends DefaultConsumer {
 
+    private DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+
     private Client client;
+
     public UserMessageConsumer(Channel channel,Client client) {
         super(channel);
         this.client=client;
@@ -36,9 +42,11 @@ public class UserMessageConsumer extends DefaultConsumer {
                 break;
             case MessageConfig.ACTION_ACCESS:
                 AccessRequestMessage msg = objectMapper.readValue(body, AccessRequestMessage.class);
-                System.out.println(" [User] ACCESS REQUESTED: 'User " + msg.getUserId()
-                    + " requested access to dataset " + msg.getId() + "'");
-                client.handleAccessRequest(msg.getUserId(),msg.getId());
+                String userId = msg.getUserId();
+                int fileId = msg.getId();
+                System.out.println(" [User] ACCESS REQUEST: User " + userId + " requested access to the dataset (id: " + fileId + ").");
+                System.out.println(" [User] ACCESS REQUEST: To accept, type: accept " + userId + " " + fileId);
+                System.out.println(" [User] ACCESS REQUEST: To reject, type: reject " + userId + " " + fileId);
                 break;
             case MessageConfig.ACTION_GET:
                 TorrentRecordMessage torrentRecordMessage = objectMapper.readValue(body,TorrentRecordMessage.class);
@@ -51,7 +59,7 @@ public class UserMessageConsumer extends DefaultConsumer {
                 break;
             case MessageConfig.ACTION_SEARCH:
                 SearchResponseTorrentMessage srtm = objectMapper.readValue(body, SearchResponseTorrentMessage.class);
-                System.out.println(" [User] SEARCH_RESPONSE: '");
+                System.out.println(" [User] SEARCH_RESPONSE: ");
                 if(srtm.getRecordsMetadata().isEmpty()){
                     System.out.println("No results matching");
                 }
@@ -61,6 +69,12 @@ public class UserMessageConsumer extends DefaultConsumer {
                     MetaData md = srtm.getRecordsMetadata().get(i);
                     System.out.format("|%7d|%12s|%15d|%7d|%7d|%6b|%13s|\n", index, md.getName(), md.getFileLength(), md.getX(),md.getY(),md.isAccessPublic(),md.getOwnerID());
                 }
+                break;
+            case MessageConfig.ACTION_MATCH_FOUND:
+                SubscriptionMatchMessage smm = objectMapper.readValue(body, SubscriptionMatchMessage.class);
+                System.out.format(" [User] MATCH_FOUND: File (id: %d) matches search query: %s (created at: %s)." ,
+                    smm.getMatchedFileId(), Attribute.print(smm.getSubscription().getQuery().getAttributes()),
+                    dateFormatter.format(smm.getSubscription().getCreatedAt()));
                 break;
             case MessageConfig.ACTION_LOGIN:
                 String response = objectMapper.readValue(body,String.class);
