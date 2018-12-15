@@ -25,6 +25,7 @@ public class Client {
     private String groupQueue;
     private String userQueue;
     private List<DownloadProcess> downloadProcesses = new LinkedList<>();
+    private List<SeedProcess> seedProcesses = new LinkedList<>();
 
     public synchronized Boolean getLogged() {
         return isLogged;
@@ -215,7 +216,9 @@ public class Client {
 
     public void seedTorrent(String torrentPath) {
         new Thread(() -> {
-            webtorrentWrapper.seedTorrent(torrentPath, Config.DOWNLOAD_FOLDER);
+            SeedProcess seedProcess = webtorrentWrapper.seedTorrent(torrentPath, Config.DOWNLOAD_FOLDER);
+            seedProcesses.add(seedProcess);
+            seedProcess.start();
         }).start();
     }
 
@@ -254,9 +257,21 @@ public class Client {
     }
 
     public void status(){
-        System.out.println("DOWNLOADING");{
-        for (DownloadProcess d:downloadProcesses){
-            System.out.println(d);
+        System.out.println("STATUS:");
+        if(!downloadProcesses.isEmpty()) {
+            System.out.println("DOWNLOADING");
+            {
+                for (DownloadProcess d : downloadProcesses) {
+                    System.out.println(d);
+                }
+            }
+        }
+        if(!seedProcesses.isEmpty()) {
+            System.out.println("SEEDING");
+            {
+                for (SeedProcess s : seedProcesses) {
+                    System.out.println(s);
+                }
             }
         }
 

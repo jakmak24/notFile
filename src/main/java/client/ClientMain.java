@@ -63,7 +63,7 @@ public class ClientMain {
                     break;
                 case "create":
                     // <torrent_file_name> <data_file_path>
-                    System.out.println(client.createTorrent(s[1], s[2]));
+                    System.out.println("Created torrent:"+client.createTorrent(s[1], s[2]));
                     break;
                 case "accept":
                     // <user> <file_id>

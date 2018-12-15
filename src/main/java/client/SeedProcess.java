@@ -4,16 +4,14 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-public class DownloadProcess {
-    private final String command;
-    String downloading;
-    String server;
-    String downloadTo;
-    String progress;
-    String time;
-    boolean finished = false;
+public class SeedProcess {
 
-    public DownloadProcess(String command) {
+    private final String command;
+    String file;
+    String progress;
+    String status;
+
+    public SeedProcess(String command) {
         this.command = command;
     }
 
@@ -21,10 +19,7 @@ public class DownloadProcess {
 
     @Override
     public String toString() {
-        if(! finished)
-            return this.downloading + " " + this.server + " " + this.downloadTo + " " + this.progress + " " + this.time;
-        else
-            return this.downloading + " finished";
+            return this.file + " " + this.progress + " " + this.status;
     }
 
     public void start() {
@@ -33,20 +28,15 @@ public class DownloadProcess {
             String line;
             BufferedReader input = new BufferedReader(new InputStreamReader(process.getInputStream()));
             while ((line = input.readLine()) != null) {
-                if (line.contains("Downloading:"))
-                    this.downloading = line;
-                else if (line.contains("Server"))
-                    this.server = line;
-                else if (line.contains("Downloading to:"))
-                    this.downloadTo = line;
+                if (line.contains("Seeding:"))
+                    this.file = line;
                 else if (line.contains("Speed:"))
                     this.progress = line;
                 else if (line.contains("Running"))
-                    this.time = line;
+                    this.status = line;
             }
             input.close();
             process.waitFor();
-            finished = true;
         } catch (IOException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
