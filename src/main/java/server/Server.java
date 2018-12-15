@@ -39,6 +39,9 @@ public class Server {
             String addQueue = channel.queueDeclare(MessageConfig.serverAdd, false, false, false, null).getQueue();
             channel.queueBind(addQueue,MessageConfig.SERVER_EXCHANGE,MessageConfig.serverAdd);
 
+            String accessQueue = channel.queueDeclare(MessageConfig.serverAccess, false, false, false, null).getQueue();
+            channel.queueBind(accessQueue,MessageConfig.SERVER_EXCHANGE,MessageConfig.serverAccess);
+
             String loginQueue = channel.queueDeclare(MessageConfig.serverLogin, false, false, false, null).getQueue();
             channel.queueBind(loginQueue,MessageConfig.SERVER_EXCHANGE,MessageConfig.serverLogin);
 
@@ -48,6 +51,7 @@ public class Server {
 
             Consumer searchConsumer = new SearchMessageConsumer(channel,this);
             Consumer addConsumer = new AddMessageConsumer(channel,this);
+            Consumer accessConsumer = new AccessMessageConsumer(channel,this);
             Consumer getConsumer = new GetMessageConsumer(channel,this);
             Consumer loginConsumer = new LoginMessageConsumer(channel,this);
 
@@ -70,6 +74,14 @@ public class Server {
             new Thread(()->{
                 try {
                     channel.basicConsume(MessageConfig.serverAdd, true, addConsumer);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }).start();
+
+            new Thread(()->{
+                try {
+                    channel.basicConsume(MessageConfig.serverAccess, true, accessConsumer);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

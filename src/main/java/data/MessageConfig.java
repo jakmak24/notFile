@@ -4,6 +4,7 @@ public class MessageConfig {
 
     public static final String serverGet = "serverGet";
     public static final String serverAdd = "serverAdd";
+    public static final String serverAccess = "serverAccess";
     public static final String serverSearch = "serverSearch";
     public static final String serverLogin= "serverLogin";
     public static final String SERVER_EXCHANGE = "server";
@@ -17,4 +18,6 @@ public class MessageConfig {
     public static final String ACTION_TORRENT_DOWNLOADED = "ACTION_TORRENT_DOWNLOADED";
     public static final String ACTION_INFO = "ACTION_INFO";
     public static final String ACTION_ACCESS = "ACTION_ACCESS";
+    public static final String ACTION_ACCESS_REQUEST_ACCEPT = "ACTION_ACCESS_REQUEST_ACCEPT";
+    public static final String ACTION_ACCESS_REQUEST_REJECT = "ACTION_ACCESS_REQUEST_REJECT";
 }
