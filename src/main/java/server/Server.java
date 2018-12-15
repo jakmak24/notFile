@@ -13,12 +13,22 @@ public class Server {
     private Connection connection;
     private Channel channelResponse;
     private Database database;
+    private SubscriptionStorage subscriptionStorage;
+
+    public Server(SubscriptionStorage subscriptionStorage) {
+        this.subscriptionStorage = subscriptionStorage;
+    }
 
     public Channel getChannelResponse() {
         return channelResponse;
     }
+
     public Database getDatabase() {
         return database;
+    }
+
+    public SubscriptionStorage getSubscriptionStorage() {
+        return this.subscriptionStorage;
     }
 
     public void openConnection(){
@@ -117,7 +127,6 @@ public class Server {
         }
 
     }
-
 }
 
 

@@ -230,12 +230,6 @@ public class Client {
 
     }
 
-    public void handleAccessRequest(String userId, int fileId) {
-        System.out.println(" [User] ACCESS REQUEST: User " + userId + " requested access to the dataset (id: " + fileId + ").");
-        System.out.println(" [User] ACCESS REQUEST: To accept, type: accept " + userId + " " + fileId);
-        System.out.println(" [User] ACCESS REQUEST: To reject, type: reject " + userId + " " + fileId);
-    }
-
     public void acceptAccessRequest(String userId, String fileId) {
         System.out.println(" [User] ACCESS REQUEST: Accepting.");
         this.accessRequestRespond(userId, fileId, MessageConfig.ACTION_ACCESS_REQUEST_ACCEPT);
