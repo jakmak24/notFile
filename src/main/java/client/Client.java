@@ -9,7 +9,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.TimeoutException;
 
 public class Client {
@@ -218,25 +217,29 @@ public class Client {
     }
 
     public void handleAccessRequest(String userId, int fileId) {
-        System.out.println(" [User] ACCESS REQUEST: User " + userId + " requested access to the dataset (id: " + fileId + "). Accept? [y/N]");
-        // TODO: handle response properly. For now 66% probability of accepting.
-        if (new Random().nextInt(3) < 2) {
-            System.out.println("        -> Accepting.");
-            this.accessRequestRespond(userId, fileId, MessageConfig.ACTION_ACCESS_REQUEST_ACCEPT);
-        } else {
-            System.out.println("        -> Rejecting.");
-            this.accessRequestRespond(userId, fileId, MessageConfig.ACTION_ACCESS_REQUEST_REJECT);
-        }
+        System.out.println(" [User] ACCESS REQUEST: User " + userId + " requested access to the dataset (id: " + fileId + ").");
+        System.out.println(" [User] ACCESS REQUEST: To accept, type: accept " + userId + " " + fileId);
+        System.out.println(" [User] ACCESS REQUEST: To reject, type: reject " + userId + " " + fileId);
     }
 
-    private void accessRequestRespond(String userId, int fileId, String response) {
+    public void acceptAccessRequest(String userId, String fileId) {
+        System.out.println(" [User] ACCESS REQUEST: Accepting.");
+        this.accessRequestRespond(userId, fileId, MessageConfig.ACTION_ACCESS_REQUEST_ACCEPT);
+    }
+
+    public void rejectAccessRequest(String userId, String fileId) {
+        System.out.println(" [User] ACCESS REQUEST: Rejecting.");
+        this.accessRequestRespond(userId, fileId, MessageConfig.ACTION_ACCESS_REQUEST_REJECT);
+    }
+
+    private void accessRequestRespond(String userId, String fileId, String response) {
         AMQP.BasicProperties props = new AMQP.BasicProperties.Builder()
             .replyTo(userId)
             .contentType(response)
             .build();
         try {
-            sendChannel.basicPublish(MessageConfig.SERVER_EXCHANGE, MessageConfig.serverAccess, props,
-                String.valueOf(fileId).getBytes());
+            sendChannel.basicPublish(
+                MessageConfig.SERVER_EXCHANGE, MessageConfig.serverAccess, props, fileId.getBytes());
         } catch (IOException e) {
             e.printStackTrace();
         }
