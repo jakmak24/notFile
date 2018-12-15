@@ -1,6 +1,7 @@
 package server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
@@ -46,6 +47,8 @@ public class AddMessageConsumer extends DefaultConsumer{
                 subscription.getUserId(), Attribute.print(subscription.getQuery().getAttributes()));
             SubscriptionMatchMessage smm = new SubscriptionMatchMessage(subscription, torrentId);
             props = new AMQP.BasicProperties.Builder().contentType(MessageConfig.ACTION_MATCH_FOUND).build();
+
+            objectMapper = objectMapper.registerModule(new JavaTimeModule());
             server.getChannelResponse().basicPublish(MessageConfig.USER_EXCHANGE, subscription.getUserId(), props,
                 objectMapper.writeValueAsBytes(smm));
         }

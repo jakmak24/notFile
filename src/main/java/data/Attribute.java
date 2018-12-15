@@ -65,7 +65,7 @@ public class Attribute implements Serializable {
         StringBuilder b = new StringBuilder();
         for (Attribute attr : attrs) {
             b.append(attr.getName()).append(" ");
-            b.append(attr.getRelation()).append(" ");
+            b.append(relationToOperator.get(attr.getRelation())).append(" ");
             b.append(attr.getValue()).append(",");
         }
         return b.toString();

@@ -1,6 +1,7 @@
 package client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
@@ -31,7 +32,7 @@ public class UserMessageConsumer extends DefaultConsumer {
     @Override
     public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
         String message = new String(body, "UTF-8");
-        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
         switch (properties.getContentType()) {
             case MessageConfig.ACTION_ADD:
@@ -51,7 +52,11 @@ public class UserMessageConsumer extends DefaultConsumer {
             case MessageConfig.ACTION_GET:
                 TorrentRecordMessage torrentRecordMessage = objectMapper.readValue(body,TorrentRecordMessage.class);
                 System.out.println(" [User] GET_RESPONSE '" + torrentRecordMessage.getMetaData().getName() + "'");
-                String filePath = "./torrents/" + torrentRecordMessage.getMetaData().getName() + ".torrent";
+                String fileName = torrentRecordMessage.getMetaData().getName();
+                if (!fileName.endsWith(".torrent")) {
+                    fileName += ".torrent";
+                }
+                String filePath = "./torrents/" + fileName;
                 try (FileOutputStream stream = new FileOutputStream(filePath)) {
                     stream.write(torrentRecordMessage.getTorrentFileData());
                     System.out.println(" [User] Saved torrent file in: " + filePath);
@@ -72,7 +77,7 @@ public class UserMessageConsumer extends DefaultConsumer {
                 break;
             case MessageConfig.ACTION_MATCH_FOUND:
                 SubscriptionMatchMessage smm = objectMapper.readValue(body, SubscriptionMatchMessage.class);
-                System.out.format(" [User] MATCH_FOUND: File (id: %d) matches search query: %s (created at: %s)." ,
+                System.out.format(" [User] MATCH_FOUND: File (id: %d) matches search query: %s (created at: %s).\n" ,
                     smm.getMatchedFileId(), Attribute.print(smm.getSubscription().getQuery().getAttributes()),
                     dateFormatter.format(smm.getSubscription().getCreatedAt()));
                 break;
