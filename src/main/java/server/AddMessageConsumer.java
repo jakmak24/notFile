@@ -43,7 +43,7 @@ public class AddMessageConsumer extends DefaultConsumer{
             System.out.println(" [ADD] No matching subscriptions found.");
         }
         for (Subscription subscription : matchingSubscriptions) {
-            System.out.format(" [ADD] Found matching subscription by user: %s (%s).",
+            System.out.format(" [ADD] Found matching subscription by user: %s (%s).\n",
                 subscription.getUserId(), Attribute.print(subscription.getQuery().getAttributes()));
             SubscriptionMatchMessage smm = new SubscriptionMatchMessage(subscription, torrentId);
             props = new AMQP.BasicProperties.Builder().contentType(MessageConfig.ACTION_MATCH_FOUND).build();

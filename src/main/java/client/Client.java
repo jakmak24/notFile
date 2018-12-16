@@ -2,16 +2,19 @@ package client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.*;
-import data.*;
-import data.messages.*;
+import data.Attribute;
+import data.MessageConfig;
+import data.MetaData;
+import data.messages.GetTorrentMessage;
+import data.messages.LoginMessage;
+import data.messages.SearchQueryMessage;
+import data.messages.TorrentRecordMessage;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.TimeoutException;
 
 public class Client {
@@ -163,7 +166,7 @@ public class Client {
         attributes.add(new Attribute("filesize", Attribute.Relation.EQ,String.valueOf(size),"Long"));
         attributes.add(new Attribute("owner", Attribute.Relation.EQ, user.getUserID(),"String"));
         if (attributes.stream().noneMatch(a -> a.getName().equals("name"))) {
-            attributes.add(new Attribute("name", Attribute.Relation.EQ, f.getName(),"String"));
+            attributes.add(new Attribute("name", Attribute.Relation.EQ, f.getName().split(".")[0],"String"));
         }
         // TODO: Add anything else that's needed.
         MetaData metaData = Attribute.convertToMetaData(attributes);
